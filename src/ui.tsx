@@ -6,19 +6,61 @@ import {
   Text,
   TextInput,
   TextInputProps,
+  TextStyle,
   View,
   ViewStyle,
 } from "react-native";
-import { colors, radius } from "./theme";
+import { LinearGradient } from "expo-linear-gradient";
+import { colors, fonts, radius } from "./theme";
+import { useStore } from "./store";
+
+/** Serif display heading (Fraunces). */
+export function Display({
+  children,
+  size = 28,
+  weight = "bold",
+  style,
+}: {
+  children: React.ReactNode;
+  size?: number;
+  weight?: "semi" | "bold" | "black";
+  style?: TextStyle;
+}) {
+  const family =
+    weight === "black"
+      ? fonts.displayBlack
+      : weight === "bold"
+        ? fonts.displayBold
+        : fonts.display;
+  return (
+    <Text
+      style={[
+        {
+          fontFamily: family,
+          fontSize: size,
+          color: colors.text,
+          letterSpacing: -0.5,
+        },
+        style,
+      ]}
+    >
+      {children}
+    </Text>
+  );
+}
 
 export function Card({
   children,
   style,
+  glow,
 }: {
   children: React.ReactNode;
   style?: ViewStyle;
+  glow?: boolean;
 }) {
-  return <View style={[styles.card, style]}>{children}</View>;
+  return (
+    <View style={[styles.card, glow && styles.cardGlow, style]}>{children}</View>
+  );
 }
 
 export function Button({
@@ -34,17 +76,40 @@ export function Button({
   disabled?: boolean;
   small?: boolean;
 }) {
+  const pad = small
+    ? { paddingVertical: 9, paddingHorizontal: 16 }
+    : { paddingVertical: 14, paddingHorizontal: 22 };
+
+  if (variant === "primary") {
+    return (
+      <Pressable
+        onPress={onPress}
+        disabled={disabled}
+        style={({ pressed }) => [{ opacity: disabled ? 0.5 : pressed ? 0.9 : 1 }]}
+      >
+        <LinearGradient
+          colors={[colors.primary, colors.primaryDeep]}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
+          style={[styles.btn, pad]}
+        >
+          <Text style={[styles.btnText, { color: "#fff" }, small && { fontSize: 14 }]}>
+            {title}
+          </Text>
+        </LinearGradient>
+      </Pressable>
+    );
+  }
+
   const bg =
-    variant === "primary"
-      ? colors.primary
-      : variant === "gold"
-        ? colors.gold
-        : variant === "danger"
-          ? "rgba(248,113,113,0.15)"
-          : "transparent";
+    variant === "gold"
+      ? colors.gold
+      : variant === "danger"
+        ? colors.dangerSoft
+        : "transparent";
   const fg =
-    variant === "primary" || variant === "gold"
-      ? "#08130B"
+    variant === "gold"
+      ? "#241A05"
       : variant === "danger"
         ? colors.danger
         : colors.text;
@@ -54,12 +119,9 @@ export function Button({
       disabled={disabled}
       style={({ pressed }) => [
         styles.btn,
-        small && { paddingVertical: 8, paddingHorizontal: 14 },
+        pad,
         { backgroundColor: bg, opacity: disabled ? 0.5 : pressed ? 0.85 : 1 },
-        variant === "ghost" && {
-          borderWidth: 1,
-          borderColor: colors.border,
-        },
+        variant === "ghost" && { borderWidth: 1, borderColor: colors.border },
       ]}
     >
       <Text style={[styles.btnText, { color: fg }, small && { fontSize: 14 }]}>
@@ -77,7 +139,7 @@ export function Field({
     <View style={{ marginBottom: 14 }}>
       <Text style={styles.fieldLabel}>{label}</Text>
       <TextInput
-        placeholderTextColor={colors.muted}
+        placeholderTextColor={colors.faint}
         style={styles.input}
         {...props}
       />
@@ -89,11 +151,11 @@ export function Progress({ value }: { value: number }) {
   const pct = Math.max(0, Math.min(1, value));
   return (
     <View style={styles.track}>
-      <View
-        style={[
-          styles.fill,
-          { width: `${pct * 100}%`, backgroundColor: colors.primary },
-        ]}
+      <LinearGradient
+        colors={[colors.primary, colors.pink]}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 0 }}
+        style={[styles.fill, { width: `${pct * 100}%` }]}
       />
     </View>
   );
@@ -106,21 +168,23 @@ export function Avatar({ name, size = 36 }: { name: string; size?: number }) {
     .map((w) => w[0])
     .join("")
     .toUpperCase();
-  const hue = [...name].reduce((a, c) => a + c.charCodeAt(0), 0) % 360;
+  const hue = ([...name].reduce((a, c) => a + c.charCodeAt(0), 0) % 80) + 250; // violet–pink range
   return (
     <View
       style={{
         width: size,
         height: size,
         borderRadius: size / 2,
-        backgroundColor: `hsl(${hue} 45% 30%)`,
+        backgroundColor: `hsl(${hue} 45% 26%)`,
         alignItems: "center",
         justifyContent: "center",
+        borderWidth: 1,
+        borderColor: `hsl(${hue} 50% 40%)`,
       }}
     >
       <Text
         style={{
-          color: `hsl(${hue} 70% 78%)`,
+          color: `hsl(${hue} 80% 82%)`,
           fontWeight: "700",
           fontSize: size * 0.36,
         }}
@@ -141,13 +205,42 @@ export function Badge({
   const map = {
     green: [colors.primarySoft, colors.primary],
     gold: [colors.goldSoft, colors.gold],
-    danger: ["rgba(248,113,113,0.15)", colors.danger],
+    danger: [colors.dangerSoft, colors.danger],
     muted: [colors.cardAlt, colors.muted],
   } as const;
   const [bg, fg] = map[tone];
   return (
     <View style={[styles.badge, { backgroundColor: bg }]}>
       <Text style={{ color: fg, fontSize: 12, fontWeight: "700" }}>{text}</Text>
+    </View>
+  );
+}
+
+/** Compact GH₵ / $ switch bound to the store. */
+export function CurrencyToggle() {
+  const { data, setDisplayCurrency } = useStore();
+  return (
+    <View style={styles.toggle}>
+      {(["GHS", "USD"] as const).map((c) => {
+        const active = data.displayCurrency === c;
+        return (
+          <Pressable
+            key={c}
+            onPress={() => setDisplayCurrency(c)}
+            style={[styles.toggleItem, active && styles.toggleItemActive]}
+          >
+            <Text
+              style={{
+                color: active ? "#fff" : colors.muted,
+                fontWeight: "800",
+                fontSize: 13,
+              }}
+            >
+              {c === "GHS" ? "GH₵" : "$"}
+            </Text>
+          </Pressable>
+        );
+      })}
     </View>
   );
 }
@@ -179,14 +272,19 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: colors.border,
   },
+  cardGlow: {
+    shadowColor: colors.primarySolid,
+    shadowOpacity: 0.5,
+    shadowRadius: 24,
+    shadowOffset: { width: 0, height: 8 },
+    elevation: 8,
+  },
   btn: {
     borderRadius: radius.pill,
-    paddingVertical: 13,
-    paddingHorizontal: 20,
     alignItems: "center",
     justifyContent: "center",
   },
-  btnText: { fontWeight: "800", fontSize: 15 },
+  btnText: { fontWeight: "800", fontSize: 15, letterSpacing: 0.2 },
   fieldLabel: {
     color: colors.muted,
     fontSize: 13,
@@ -217,12 +315,28 @@ const styles = StyleSheet.create({
     alignSelf: "flex-start",
   },
   section: {
-    color: colors.muted,
-    fontSize: 13,
-    fontWeight: "700",
+    color: colors.faint,
+    fontSize: 12,
+    fontWeight: "800",
     textTransform: "uppercase",
-    letterSpacing: 0.5,
+    letterSpacing: 1.2,
     marginBottom: 10,
     marginTop: 4,
   },
+  toggle: {
+    flexDirection: "row",
+    backgroundColor: colors.cardAlt,
+    borderRadius: radius.pill,
+    padding: 3,
+    borderWidth: 1,
+    borderColor: colors.border,
+  },
+  toggleItem: {
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: radius.pill,
+    minWidth: 40,
+    alignItems: "center",
+  },
+  toggleItemActive: { backgroundColor: colors.primarySolid },
 });

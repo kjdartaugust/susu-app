@@ -1,4 +1,4 @@
-import { Circle, Frequency, Goal } from "./types";
+import { Circle, Currency, Frequency, Goal } from "./types";
 
 export const FREQ_DAYS: Record<Frequency, number> = {
   weekly: 7,
@@ -59,9 +59,44 @@ export function goalSaved(goal: Goal): number {
   return goal.txns.reduce((s, t) => s + t.amount, 0);
 }
 
-export function formatMoney(amount: number, currency = "GH₵"): string {
-  return `${currency}${amount.toLocaleString(undefined, {
-    minimumFractionDigits: amount % 1 === 0 ? 0 : 2,
+export const CURRENCY_SYMBOL: Record<Currency, string> = {
+  GHS: "GH₵",
+  USD: "$",
+};
+
+export const CURRENCY_LABEL: Record<Currency, string> = {
+  GHS: "Ghana Cedis",
+  USD: "US Dollars",
+};
+
+/** Convert a base (GHS) amount into the chosen display currency. */
+export function convert(
+  amountGhs: number,
+  display: Currency,
+  usdRate: number
+): number {
+  return display === "USD" ? amountGhs / usdRate : amountGhs;
+}
+
+/** Convert an amount typed in the display currency back to base GHS. */
+export function toBaseGhs(
+  amount: number,
+  display: Currency,
+  usdRate: number
+): number {
+  return display === "USD" ? amount * usdRate : amount;
+}
+
+/** Format a base (GHS) amount in the chosen display currency. */
+export function formatMoney(
+  amountGhs: number,
+  display: Currency = "GHS",
+  usdRate = 1
+): string {
+  const v = convert(amountGhs, display, usdRate);
+  const rounded = Math.round(v * 100) / 100;
+  return `${CURRENCY_SYMBOL[display]}${rounded.toLocaleString(undefined, {
+    minimumFractionDigits: rounded % 1 === 0 ? 0 : 2,
     maximumFractionDigits: 2,
   })}`;
 }

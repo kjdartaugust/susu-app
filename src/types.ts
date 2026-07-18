@@ -32,9 +32,14 @@ export interface Goal {
   txns: SavingsTxn[];
 }
 
+export type Currency = "GHS" | "USD";
+
 export interface AppData {
   circles: Circle[];
   goals: Goal[];
-  currency: string; // symbol, default GH₵
+  /** All money is stored internally in GHS (base). This chooses how it's shown. */
+  displayCurrency: Currency;
+  /** GHS per 1 USD, used to convert for display + entry. */
+  usdRate: number;
   name: string; // the user's display name
 }

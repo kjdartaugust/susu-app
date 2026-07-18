@@ -2,7 +2,7 @@ import React from "react";
 import { Pressable, ScrollView, Text, View } from "react-native";
 import { useStore } from "../store";
 import { colors } from "../theme";
-import { Avatar, Badge, Button, Card } from "../ui";
+import { Avatar, Badge, Button, Card, Display } from "../ui";
 import {
   currentCycleIndex,
   formatMoney,
@@ -21,7 +21,7 @@ export default function Circles({
   onNew: () => void;
 }) {
   const { data } = useStore();
-  const cur = data.currency;
+  const fmt = (n: number) => formatMoney(n, data.displayCurrency, data.usdRate);
 
   return (
     <ScrollView
@@ -37,9 +37,9 @@ export default function Circles({
           marginTop: 8,
         }}
       >
-        <Text style={{ color: colors.text, fontSize: 28, fontWeight: "800" }}>
+        <Display size={30} weight="black">
           Susu Circles
-        </Text>
+        </Display>
         <Button title="+ New" onPress={onNew} small />
       </View>
 
@@ -74,17 +74,16 @@ export default function Circles({
                   alignItems: "center",
                 }}
               >
-                <Text style={{ color: colors.text, fontSize: 18, fontWeight: "700" }}>
+                <Display size={19} weight="semi">
                   {c.name}
-                </Text>
+                </Display>
                 <Badge
                   text={complete ? "Complete" : relativeDue(due)}
                   tone={complete ? "green" : "gold"}
                 />
               </View>
               <Text style={{ color: colors.muted, marginTop: 4 }}>
-                {formatMoney(c.contribution, cur)} each · pot{" "}
-                {formatMoney(potSize(c), cur)}
+                {fmt(c.contribution)} each · pot {fmt(potSize(c))}
               </Text>
 
               <View style={{ flexDirection: "row", marginTop: 14 }}>

@@ -1,8 +1,17 @@
 import React from "react";
 import { Pressable, ScrollView, Text, View } from "react-native";
+import { LinearGradient } from "expo-linear-gradient";
 import { useStore } from "../store";
-import { colors } from "../theme";
-import { Avatar, Badge, Card, Progress, SectionTitle } from "../ui";
+import { colors, radius } from "../theme";
+import {
+  Avatar,
+  Badge,
+  Card,
+  CurrencyToggle,
+  Display,
+  Progress,
+  SectionTitle,
+} from "../ui";
 import {
   currentCycleIndex,
   formatMoney,
@@ -22,11 +31,10 @@ export default function Home({
   onGoTab: (t: string) => void;
 }) {
   const { data } = useStore();
-  const cur = data.currency;
+  const fmt = (n: number) => formatMoney(n, data.displayCurrency, data.usdRate);
 
   const totalInSusu = data.circles.reduce((sum, c) => {
     const idx = currentCycleIndex(c);
-    // amount the user has put in across all elapsed cycles
     let paidCount = 0;
     const me = c.members.find((m) => m.name === data.name) ?? c.members[0];
     for (let i = 0; i <= idx; i++) {
@@ -42,52 +50,64 @@ export default function Home({
       contentContainerStyle={{ padding: 16, paddingBottom: 120 }}
       showsVerticalScrollIndicator={false}
     >
-      <Text style={{ color: colors.muted, fontSize: 15, marginTop: 8 }}>
-        Akwaaba,
-      </Text>
-      <Text
+      <View
         style={{
-          color: colors.text,
-          fontSize: 30,
-          fontWeight: "800",
-          marginBottom: 16,
+          flexDirection: "row",
+          justifyContent: "space-between",
+          alignItems: "center",
+          marginTop: 6,
+          marginBottom: 4,
         }}
       >
+        <Text style={{ color: colors.muted, fontSize: 15 }}>Akwaaba,</Text>
+        <CurrencyToggle />
+      </View>
+      <Display size={34} weight="black" style={{ marginBottom: 18 }}>
         {data.name} 👋
-      </Text>
+      </Display>
 
-      {/* Balance summary */}
-      <Card style={{ backgroundColor: colors.primary, borderColor: colors.primary }}>
-        <Text style={{ color: "#08130B", opacity: 0.7, fontWeight: "700" }}>
-          Total saved everywhere
-        </Text>
-        <Text
-          style={{ color: "#08130B", fontSize: 34, fontWeight: "900", marginTop: 4 }}
+      {/* Balance hero */}
+      <View style={{ borderRadius: radius.lg, overflow: "hidden" }}>
+        <LinearGradient
+          colors={[colors.primaryDeep, colors.primarySolid, colors.pink]}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
+          style={{ padding: 22 }}
         >
-          {formatMoney(totalInSusu + totalSaved, cur)}
+          <Text style={{ color: "rgba(255,255,255,0.75)", fontWeight: "700" }}>
+            Total saved everywhere
+          </Text>
+          <Display size={40} weight="black" style={{ color: "#fff", marginTop: 6 }}>
+            {fmt(totalInSusu + totalSaved)}
+          </Display>
+          <View style={{ flexDirection: "row", gap: 28, marginTop: 16 }}>
+            <View>
+              <Text style={{ color: "rgba(255,255,255,0.7)", fontSize: 13 }}>
+                In susu
+              </Text>
+              <Text style={{ color: "#fff", fontWeight: "800", fontSize: 18 }}>
+                {fmt(totalInSusu)}
+              </Text>
+            </View>
+            <View>
+              <Text style={{ color: "rgba(255,255,255,0.7)", fontSize: 13 }}>
+                In goals
+              </Text>
+              <Text style={{ color: "#fff", fontWeight: "800", fontSize: 18 }}>
+                {fmt(totalSaved)}
+              </Text>
+            </View>
+          </View>
+        </LinearGradient>
+      </View>
+      {data.displayCurrency === "USD" && (
+        <Text style={{ color: colors.faint, fontSize: 12, marginTop: 8 }}>
+          Converted at GH₵{data.usdRate} = $1
         </Text>
-        <View style={{ flexDirection: "row", gap: 20, marginTop: 12 }}>
-          <View>
-            <Text style={{ color: "#08130B", opacity: 0.7, fontSize: 13 }}>
-              In susu
-            </Text>
-            <Text style={{ color: "#08130B", fontWeight: "800", fontSize: 17 }}>
-              {formatMoney(totalInSusu, cur)}
-            </Text>
-          </View>
-          <View>
-            <Text style={{ color: "#08130B", opacity: 0.7, fontSize: 13 }}>
-              In goals
-            </Text>
-            <Text style={{ color: "#08130B", fontWeight: "800", fontSize: 17 }}>
-              {formatMoney(totalSaved, cur)}
-            </Text>
-          </View>
-        </View>
-      </Card>
+      )}
 
       {/* Susu circles */}
-      <View style={{ marginTop: 24 }}>
+      <View style={{ marginTop: 26 }}>
         <SectionTitle>Your Susu Circles</SectionTitle>
         {data.circles.length === 0 && (
           <Pressable onPress={() => onGoTab("circles")}>
@@ -114,18 +134,16 @@ export default function Home({
                     alignItems: "center",
                   }}
                 >
-                  <Text
-                    style={{ color: colors.text, fontSize: 17, fontWeight: "700" }}
-                  >
+                  <Display size={18} weight="semi">
                     {c.name}
-                  </Text>
+                  </Display>
                   <Badge
                     text={complete ? "Cycle done" : relativeDue(due)}
                     tone={complete ? "green" : "gold"}
                   />
                 </View>
                 <Text style={{ color: colors.muted, marginTop: 4 }}>
-                  Pot {formatMoney(potSize(c), cur)} · {c.members.length} members
+                  Pot {fmt(potSize(c))} · {c.members.length} members
                 </Text>
                 <View style={{ marginTop: 12 }}>
                   <Progress value={paidN / c.members.length} />
@@ -158,7 +176,7 @@ export default function Home({
       </View>
 
       {/* Goals preview */}
-      <View style={{ marginTop: 12 }}>
+      <View style={{ marginTop: 14 }}>
         <SectionTitle>Savings Goals</SectionTitle>
         {data.goals.length === 0 && (
           <Pressable onPress={() => onGoTab("goals")}>
@@ -180,11 +198,11 @@ export default function Home({
                     justifyContent: "space-between",
                   }}
                 >
-                  <Text style={{ color: colors.text, fontWeight: "700", fontSize: 16 }}>
+                  <Display size={16} weight="semi">
                     {g.name}
-                  </Text>
+                  </Display>
                   <Text style={{ color: colors.muted }}>
-                    {formatMoney(saved, cur)} / {formatMoney(g.target, cur)}
+                    {fmt(saved)} / {fmt(g.target)}
                   </Text>
                 </View>
                 <View style={{ marginTop: 10 }}>

@@ -5,6 +5,11 @@ import {
   SafeAreaProvider,
   SafeAreaView,
 } from "react-native-safe-area-context";
+import {
+  useFonts,
+  Fraunces_600SemiBold,
+  Fraunces_700Bold,
+} from "@expo-google-fonts/fraunces";
 import { StoreProvider, useStore } from "./src/store";
 import { colors } from "./src/theme";
 import { Loader } from "./src/ui";
@@ -115,11 +120,19 @@ function Shell() {
 }
 
 export default function App() {
+  const [fontsLoaded, fontError] = useFonts({
+    Fraunces_600SemiBold,
+    Fraunces_700Bold,
+  });
+
+  // Never block the app on fonts — if they error, fall back to system serif.
+  const ready = fontsLoaded || !!fontError;
+
   return (
     <SafeAreaProvider>
       <StoreProvider>
         <StatusBar style="light" />
-        <Shell />
+        {ready ? <Shell /> : <Loader />}
       </StoreProvider>
     </SafeAreaProvider>
   );

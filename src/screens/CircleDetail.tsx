@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import { Alert, Pressable, ScrollView, Text, View } from "react-native";
 import { useStore } from "../store";
 import { colors, radius } from "../theme";
-import { Avatar, Badge, Button, Card } from "../ui";
+import { Avatar, Badge, Button, Card, Display } from "../ui";
 import {
   FREQ_LABEL,
   currentCycleIndex,
@@ -25,7 +25,7 @@ export default function CircleDetail({
 }) {
   const { data, togglePaid, deleteCircle } = useStore();
   const circle = data.circles.find((c) => c.id === circleId);
-  const cur = data.currency;
+  const fmt = (n: number) => formatMoney(n, data.displayCurrency, data.usdRate);
   const liveIdx = circle ? currentCycleIndex(circle) : 0;
   const [viewIdx, setViewIdx] = useState(liveIdx);
 
@@ -68,12 +68,12 @@ export default function CircleDetail({
         </Text>
       </Pressable>
 
-      <Text style={{ color: colors.text, fontSize: 28, fontWeight: "800" }}>
+      <Display size={30} weight="black">
         {circle.name}
-      </Text>
+      </Display>
       <Text style={{ color: colors.muted, marginTop: 4 }}>
-        {formatMoney(circle.contribution, cur)} · {FREQ_LABEL[circle.frequency]}{" "}
-        · pot {formatMoney(potSize(circle), cur)}
+        {fmt(circle.contribution)} · {FREQ_LABEL[circle.frequency]} · pot{" "}
+        {fmt(potSize(circle))}
       </Text>
 
       {/* Cycle selector */}
@@ -148,7 +148,7 @@ export default function CircleDetail({
                 Collects the pot
               </Text>
               <Text style={{ color: colors.gold, fontWeight: "800", fontSize: 17 }}>
-                {recipient.name} · {formatMoney(potSize(circle), cur)}
+                {recipient.name} · {fmt(potSize(circle))}
               </Text>
             </View>
           </View>

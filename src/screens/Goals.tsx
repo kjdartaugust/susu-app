@@ -9,12 +9,14 @@ import {
 } from "react-native";
 import { useStore } from "../store";
 import { colors, radius } from "../theme";
-import { Button, Card, Field, Progress } from "../ui";
-import { formatMoney, goalSaved } from "../logic";
+import { Button, Card, CurrencyToggle, Display, Field, Progress } from "../ui";
+import { CURRENCY_SYMBOL, formatMoney, goalSaved, toBaseGhs } from "../logic";
 
 export default function Goals() {
   const { data, addGoal, addGoalTxn, deleteGoal } = useStore();
-  const cur = data.currency;
+  const disp = data.displayCurrency;
+  const sym = CURRENCY_SYMBOL[disp];
+  const fmt = (n: number) => formatMoney(n, disp, data.usdRate);
   const [newOpen, setNewOpen] = useState(false);
   const [gName, setGName] = useState("");
   const [gTarget, setGTarget] = useState("");
@@ -24,7 +26,7 @@ export default function Goals() {
 
   function createGoal() {
     if (!gName.trim() || Number(gTarget) <= 0) return;
-    addGoal(gName.trim(), Number(gTarget));
+    addGoal(gName.trim(), toBaseGhs(Number(gTarget), disp, data.usdRate));
     setGName("");
     setGTarget("");
     setNewOpen(false);
@@ -32,7 +34,11 @@ export default function Goals() {
 
   function deposit() {
     if (!depOpen || !Number(depAmt)) return;
-    addGoalTxn(depOpen, Number(depAmt), depNote.trim() || "Deposit");
+    addGoalTxn(
+      depOpen,
+      toBaseGhs(Number(depAmt), disp, data.usdRate),
+      depNote.trim() || "Deposit"
+    );
     setDepAmt("");
     setDepNote("");
     setDepOpen(null);
@@ -52,10 +58,13 @@ export default function Goals() {
           marginTop: 8,
         }}
       >
-        <Text style={{ color: colors.text, fontSize: 28, fontWeight: "800" }}>
+        <Display size={30} weight="black">
           Savings Goals
-        </Text>
-        <Button title="+ New" onPress={() => setNewOpen(true)} small />
+        </Display>
+        <View style={{ flexDirection: "row", alignItems: "center", gap: 10 }}>
+          <CurrencyToggle />
+          <Button title="+ New" onPress={() => setNewOpen(true)} small />
+        </View>
       </View>
 
       {data.goals.length === 0 && (
@@ -79,9 +88,9 @@ export default function Goals() {
                 alignItems: "center",
               }}
             >
-              <Text style={{ color: colors.text, fontWeight: "700", fontSize: 17 }}>
+              <Display size={18} weight="semi">
                 {g.name} {done ? "🎉" : ""}
-              </Text>
+              </Display>
               <Pressable
                 onPress={() =>
                   Alert.alert("Delete goal?", g.name, [
@@ -98,8 +107,7 @@ export default function Goals() {
               </Pressable>
             </View>
             <Text style={{ color: colors.muted, marginTop: 4, marginBottom: 10 }}>
-              {formatMoney(saved, cur)} of {formatMoney(g.target, cur)} ·{" "}
-              {Math.round(pct * 100)}%
+              {fmt(saved)} of {fmt(g.target)} · {Math.round(pct * 100)}%
             </Text>
             <Progress value={pct} />
             <View style={{ marginTop: 14 }}>
@@ -131,7 +139,7 @@ export default function Goals() {
                       }}
                     >
                       {t.amount >= 0 ? "+" : ""}
-                      {formatMoney(t.amount, cur)}
+                      {fmt(t.amount)}
                     </Text>
                   </View>
                 ))}
@@ -151,7 +159,7 @@ export default function Goals() {
             onChangeText={setGName}
           />
           <Field
-            label={`Target (${cur})`}
+            label={`Target (${sym})`}
             placeholder="2000"
             keyboardType="numeric"
             value={gTarget}
@@ -165,7 +173,7 @@ export default function Goals() {
       <Modal visible={!!depOpen} transparent animationType="slide">
         <Sheet onClose={() => setDepOpen(null)} title="Add money">
           <Field
-            label={`Amount (${cur}) — use minus for withdrawal`}
+            label={`Amount (${sym}) — use minus for withdrawal`}
             placeholder="100"
             keyboardType="numbers-and-punctuation"
             value={depAmt}

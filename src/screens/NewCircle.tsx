@@ -2,8 +2,8 @@ import React, { useState } from "react";
 import { Pressable, ScrollView, Text, View } from "react-native";
 import { useStore } from "../store";
 import { colors, radius } from "../theme";
-import { Button, Card, Field } from "../ui";
-import { FREQ_LABEL, uid } from "../logic";
+import { Button, Card, Display, Field } from "../ui";
+import { CURRENCY_SYMBOL, FREQ_LABEL, toBaseGhs, uid } from "../logic";
 import { Frequency } from "../types";
 
 const FREQS: Frequency[] = ["weekly", "biweekly", "monthly"];
@@ -32,7 +32,7 @@ export default function NewCircle({
     if (!valid) return;
     const id = addCircle({
       name: name.trim(),
-      contribution: Number(amount),
+      contribution: toBaseGhs(Number(amount), data.displayCurrency, data.usdRate),
       frequency: freq,
       startDate: new Date().toISOString(),
       members: members.map((n) => ({ id: uid(), name: n })),
@@ -54,9 +54,9 @@ export default function NewCircle({
           marginTop: 4,
         }}
       >
-        <Text style={{ color: colors.text, fontSize: 24, fontWeight: "800" }}>
+        <Display size={26} weight="black">
           New Circle
-        </Text>
+        </Display>
         <Pressable onPress={onCancel}>
           <Text style={{ color: colors.muted, fontSize: 16 }}>Cancel</Text>
         </Pressable>
@@ -70,7 +70,7 @@ export default function NewCircle({
           onChangeText={setName}
         />
         <Field
-          label={`Contribution per round (${data.currency})`}
+          label={`Contribution per round (${CURRENCY_SYMBOL[data.displayCurrency]})`}
           placeholder="100"
           keyboardType="numeric"
           value={amount}

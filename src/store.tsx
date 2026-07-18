@@ -7,17 +7,30 @@ import React, {
   useRef,
   useState,
 } from "react";
-import { AppData, Circle, Goal, Member, SavingsTxn } from "./types";
+import { AppData, Circle, Currency, Goal, Member, SavingsTxn } from "./types";
 import { paidKey, uid } from "./logic";
 
 const KEY = "susu.data.v1";
 
+export const DEFAULT_USD_RATE = 15.5; // GHS per 1 USD
+
 const EMPTY: AppData = {
   circles: [],
   goals: [],
-  currency: "GH₵",
+  displayCurrency: "GHS",
+  usdRate: DEFAULT_USD_RATE,
   name: "Me",
 };
+
+/** Fill in any fields missing from older saved payloads. */
+function migrate(raw: Partial<AppData>): AppData {
+  return {
+    ...EMPTY,
+    ...raw,
+    displayCurrency: raw.displayCurrency ?? "GHS",
+    usdRate: raw.usdRate && raw.usdRate > 0 ? raw.usdRate : DEFAULT_USD_RATE,
+  };
+}
 
 /** First-run seed so the app never looks empty in reviews/screenshots. */
 function seed(): AppData {
@@ -78,6 +91,9 @@ interface StoreValue {
   deleteGoal: (id: string) => void;
   // settings
   setName: (name: string) => void;
+  setDisplayCurrency: (c: Currency) => void;
+  toggleCurrency: () => void;
+  setUsdRate: (rate: number) => void;
   reset: () => void;
 }
 
@@ -93,7 +109,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       try {
         const raw = await AsyncStorage.getItem(KEY);
         if (raw) {
-          setData({ ...EMPTY, ...JSON.parse(raw) });
+          setData(migrate(JSON.parse(raw)));
         } else {
           setData(seed());
         }
@@ -181,6 +197,21 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     setData((d) => ({ ...d, name }));
   }, []);
 
+  const setDisplayCurrency = useCallback((c: Currency) => {
+    setData((d) => ({ ...d, displayCurrency: c }));
+  }, []);
+
+  const toggleCurrency = useCallback(() => {
+    setData((d) => ({
+      ...d,
+      displayCurrency: d.displayCurrency === "GHS" ? "USD" : "GHS",
+    }));
+  }, []);
+
+  const setUsdRate = useCallback((rate: number) => {
+    setData((d) => ({ ...d, usdRate: rate > 0 ? rate : d.usdRate }));
+  }, []);
+
   const reset = useCallback(() => setData(seed()), []);
 
   return (
@@ -196,6 +227,9 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
         addGoalTxn,
         deleteGoal,
         setName,
+        setDisplayCurrency,
+        toggleCurrency,
+        setUsdRate,
         reset,
       }}
     >
