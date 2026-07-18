@@ -21,6 +21,7 @@ import Goals from "./src/screens/Goals";
 import Settings from "./src/screens/Settings";
 import Auth from "./src/screens/Auth";
 import Join from "./src/screens/Join";
+import Welcome from "./src/screens/Welcome";
 
 type Tab = "home" | "circles" | "goals" | "settings";
 
@@ -37,6 +38,35 @@ const TABS: { key: Tab; label: string; icon: string }[] = [
   { key: "goals", label: "Goals", icon: "◎" },
   { key: "settings", label: "More", icon: "⋯" },
 ];
+
+function SignedOut() {
+  // Invite links carry intent to join, so skip the welcome and go straight to
+  // sign-up; otherwise show the welcome front door first.
+  const [view, setView] = useState<"welcome" | "auth">(
+    INITIAL_INVITE ? "auth" : "welcome"
+  );
+  const [mode, setMode] = useState<"login" | "signup">("signup");
+
+  if (view === "auth")
+    return (
+      <Auth
+        initialMode={mode}
+        onBack={INITIAL_INVITE ? undefined : () => setView("welcome")}
+      />
+    );
+  return (
+    <Welcome
+      onGetStarted={() => {
+        setMode("signup");
+        setView("auth");
+      }}
+      onSignIn={() => {
+        setMode("login");
+        setView("auth");
+      }}
+    />
+  );
+}
 
 function Shell() {
   const { status } = useStore();
@@ -63,7 +93,7 @@ function Shell() {
   if (status === "signedOut")
     return (
       <SafeAreaView style={styles.root} edges={["top", "bottom"]}>
-        <Auth />
+        <SignedOut />
       </SafeAreaView>
     );
 

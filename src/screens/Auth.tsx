@@ -6,9 +6,15 @@ import { Button, Card, Display, Field } from "../ui";
 
 // First screen when signed out. Login/signup against the shared Dola backend;
 // on success the store flips to "ready" and the app renders.
-export default function Auth() {
+export default function Auth({
+  initialMode = "signup",
+  onBack,
+}: {
+  initialMode?: "login" | "signup";
+  onBack?: () => void;
+}) {
   const { login, signup } = useStore();
-  const [mode, setMode] = useState<"login" | "signup">("signup");
+  const [mode, setMode] = useState<"login" | "signup">(initialMode);
   const [fullName, setFullName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -50,13 +56,20 @@ export default function Auth() {
         contentContainerStyle={{ padding: 20, paddingTop: 60, paddingBottom: 60 }}
         keyboardShouldPersistTaps="handled"
       >
+        {onBack && (
+          <Pressable onPress={onBack} style={{ marginBottom: 14 }}>
+            <Text style={{ color: colors.primary, fontSize: 16, fontWeight: "600" }}>
+              ‹ Back
+            </Text>
+          </Pressable>
+        )}
         <Display size={34} weight="black">
-          Susu
+          {isSignup ? "Create your account" : "Welcome back"}
         </Display>
         <Text style={{ color: colors.muted, marginTop: 8, marginBottom: 28, fontSize: 15, lineHeight: 21 }}>
           {isSignup
-            ? "Create an account to save your circles and reach them from any phone."
-            : "Welcome back — sign in to your circles and goals."}
+            ? "Save your circles and reach them from any phone."
+            : "Sign in to your circles and goals."}
         </Text>
 
         <Card>
