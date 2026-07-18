@@ -24,24 +24,38 @@ export default function Goals() {
   const [depAmt, setDepAmt] = useState("");
   const [depNote, setDepNote] = useState("");
 
-  function createGoal() {
+  async function createGoal() {
     if (!gName.trim() || Number(gTarget) <= 0) return;
-    addGoal(gName.trim(), toBaseGhs(Number(gTarget), disp, data.usdRate));
-    setGName("");
-    setGTarget("");
-    setNewOpen(false);
+    try {
+      await addGoal(gName.trim(), toBaseGhs(Number(gTarget), disp, data.usdRate));
+      setGName("");
+      setGTarget("");
+      setNewOpen(false);
+    } catch (e) {
+      Alert.alert(
+        "Couldn't create goal",
+        e instanceof Error ? e.message : "Please try again."
+      );
+    }
   }
 
-  function deposit() {
+  async function deposit() {
     if (!depOpen || !Number(depAmt)) return;
-    addGoalTxn(
-      depOpen,
-      toBaseGhs(Number(depAmt), disp, data.usdRate),
-      depNote.trim() || "Deposit"
-    );
-    setDepAmt("");
-    setDepNote("");
-    setDepOpen(null);
+    try {
+      await addGoalTxn(
+        depOpen,
+        toBaseGhs(Number(depAmt), disp, data.usdRate),
+        depNote.trim() || "Deposit"
+      );
+      setDepAmt("");
+      setDepNote("");
+      setDepOpen(null);
+    } catch (e) {
+      Alert.alert(
+        "Couldn't save",
+        e instanceof Error ? e.message : "Please try again."
+      );
+    }
   }
 
   return (
@@ -98,7 +112,14 @@ export default function Goals() {
                     {
                       text: "Delete",
                       style: "destructive",
-                      onPress: () => deleteGoal(g.id),
+                      onPress: () => {
+                        deleteGoal(g.id).catch((e) =>
+                          Alert.alert(
+                            "Couldn't delete",
+                            e instanceof Error ? e.message : "Please try again."
+                          )
+                        );
+                      },
                     },
                   ])
                 }

@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { Pressable, ScrollView, Text, View } from "react-native";
+import { Alert, Pressable, ScrollView, Text, View } from "react-native";
 import { useStore } from "../store";
 import { colors, radius } from "../theme";
 import { Button, Card, Display, Field } from "../ui";
@@ -26,18 +26,33 @@ export default function NewCircle({
     .map((s) => s.trim())
     .filter(Boolean);
 
+  const [busy, setBusy] = useState(false);
   const valid = name.trim() && Number(amount) > 0 && members.length >= 2;
 
-  function create() {
-    if (!valid) return;
-    const id = addCircle({
-      name: name.trim(),
-      contribution: toBaseGhs(Number(amount), data.displayCurrency, data.usdRate),
-      frequency: freq,
-      startDate: new Date().toISOString(),
-      members: members.map((n) => ({ id: uid(), name: n })),
-    });
-    onDone(id);
+  async function create() {
+    if (!valid || busy) return;
+    setBusy(true);
+    try {
+      const id = await addCircle({
+        name: name.trim(),
+        contribution: toBaseGhs(
+          Number(amount),
+          data.displayCurrency,
+          data.usdRate
+        ),
+        frequency: freq,
+        startDate: new Date().toISOString(),
+        members: members.map((n) => ({ id: uid(), name: n })),
+      });
+      if (id) onDone(id);
+    } catch (e) {
+      Alert.alert(
+        "Couldn't create circle",
+        e instanceof Error ? e.message : "Please try again."
+      );
+    } finally {
+      setBusy(false);
+    }
   }
 
   return (
@@ -130,7 +145,11 @@ export default function NewCircle({
       </Card>
 
       <View style={{ marginTop: 18 }}>
-        <Button title="Create circle" onPress={create} disabled={!valid} />
+        <Button
+          title={busy ? "Creating…" : "Create circle"}
+          onPress={create}
+          disabled={!valid || busy}
+        />
       </View>
     </ScrollView>
   );

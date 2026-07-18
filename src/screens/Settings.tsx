@@ -7,7 +7,7 @@ import { CURRENCY_LABEL, formatMoney } from "../logic";
 import { Currency } from "../types";
 
 export default function Settings() {
-  const { data, setName, setDisplayCurrency, setUsdRate, reset } = useStore();
+  const { data, setName, setDisplayCurrency, setUsdRate, logout } = useStore();
   const [name, setLocalName] = useState(data.name);
   const [rate, setRate] = useState(String(data.usdRate));
 
@@ -118,30 +118,33 @@ export default function Settings() {
           Susu is a traditional West African group savings method. Everyone
           contributes a fixed amount each round, and one member collects the
           whole pot in turn until everyone has received once. This app keeps
-          track of who has paid and whose turn it is — all stored privately on
-          your phone.
+          track of who has paid and whose turn it is, synced to your account so
+          you can reach your circles from any phone.
         </Text>
       </Card>
 
       <Card style={{ marginTop: 14 }}>
         <Text style={{ color: colors.text, fontWeight: "700", fontSize: 16 }}>
-          Data
+          Account
         </Text>
         <Text style={{ color: colors.muted, marginTop: 6, marginBottom: 12 }}>
-          Everything is stored offline on this device. Nothing is uploaded.
+          Your circles and goals are saved to your account and sync across your
+          devices.
         </Text>
         <Button
-          title="Reset to sample data"
+          title="Sign out"
           variant="danger"
           onPress={() =>
-            Alert.alert(
-              "Reset everything?",
-              "This clears your circles and goals and restores the sample data.",
-              [
-                { text: "Cancel", style: "cancel" },
-                { text: "Reset", style: "destructive", onPress: reset },
-              ]
-            )
+            Alert.alert("Sign out?", "You can sign back in anytime.", [
+              { text: "Cancel", style: "cancel" },
+              {
+                text: "Sign out",
+                style: "destructive",
+                onPress: () => {
+                  logout().catch(() => {});
+                },
+              },
+            ])
           }
         />
       </Card>

@@ -49,9 +49,16 @@ export default function CircleDetail({
       {
         text: "Delete",
         style: "destructive",
-        onPress: () => {
-          deleteCircle(circle!.id);
-          onBack();
+        onPress: async () => {
+          try {
+            await deleteCircle(circle!.id);
+            onBack();
+          } catch (e) {
+            Alert.alert(
+              "Couldn't delete",
+              e instanceof Error ? e.message : "Please try again."
+            );
+          }
         },
       },
     ]);
@@ -178,7 +185,14 @@ export default function CircleDetail({
         return (
           <Pressable
             key={m.id}
-            onPress={() => togglePaid(circle.id, viewIdx, m.id)}
+            onPress={() => {
+              togglePaid(circle.id, viewIdx, m.id).catch((e) =>
+                Alert.alert(
+                  "Couldn't save",
+                  e instanceof Error ? e.message : "Please try again."
+                )
+              );
+            }}
           >
             <Card
               style={{

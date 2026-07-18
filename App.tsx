@@ -19,6 +19,7 @@ import CircleDetail from "./src/screens/CircleDetail";
 import NewCircle from "./src/screens/NewCircle";
 import Goals from "./src/screens/Goals";
 import Settings from "./src/screens/Settings";
+import Auth from "./src/screens/Auth";
 
 type Tab = "home" | "circles" | "goals" | "settings";
 
@@ -30,12 +31,18 @@ const TABS: { key: Tab; label: string; icon: string }[] = [
 ];
 
 function Shell() {
-  const { ready } = useStore();
+  const { status } = useStore();
   const [tab, setTab] = useState<Tab>("home");
   const [detailId, setDetailId] = useState<string | null>(null);
   const [creating, setCreating] = useState(false);
 
-  if (!ready) return <Loader />;
+  if (status === "loading") return <Loader />;
+  if (status === "signedOut")
+    return (
+      <SafeAreaView style={styles.root} edges={["top", "bottom"]}>
+        <Auth />
+      </SafeAreaView>
+    );
 
   let content: React.ReactNode;
   if (creating) {
