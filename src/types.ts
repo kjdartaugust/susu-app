@@ -3,6 +3,8 @@ export type Frequency = "weekly" | "biweekly" | "monthly";
 export interface Member {
   id: string;
   name: string;
+  /** Set once a real Dola user claims this slot (invite flow). */
+  userId?: string | null;
 }
 
 /** A rotating savings circle (susu). Each cycle everyone contributes the same
