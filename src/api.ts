@@ -174,3 +174,44 @@ export async function addGoalTxn(
   );
   return state;
 }
+
+/* ------------------------------------------------------------- invites ---- */
+
+export interface InvitePreview {
+  circleName: string;
+  memberName: string;
+  contribution: number;
+  claimed: boolean;
+}
+
+// Owner mints an invite for a member slot; returns the token to share.
+export async function createInvite(
+  circleId: string,
+  memberId: string
+): Promise<string> {
+  const { token } = await api<{ token: string }>(
+    "POST",
+    `/api/susu/circles/${circleId}/invite`,
+    { memberId }
+  );
+  return token;
+}
+
+// Public — no auth needed to look at what an invite is for.
+export async function fetchInvitePreview(
+  token: string
+): Promise<InvitePreview> {
+  const { invite } = await api<{ invite: InvitePreview }>(
+    "GET",
+    `/api/susu/invites/${encodeURIComponent(token)}`
+  );
+  return invite;
+}
+
+export async function acceptInvite(token: string): Promise<SusuState> {
+  const { state } = await api<{ state: SusuState }>(
+    "POST",
+    `/api/susu/invites/${encodeURIComponent(token)}/accept`
+  );
+  return state;
+}

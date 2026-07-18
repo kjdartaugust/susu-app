@@ -16,9 +16,11 @@ import {
 export default function Circles({
   onOpenCircle,
   onNew,
+  onJoin,
 }: {
   onOpenCircle: (id: string) => void;
   onNew: () => void;
+  onJoin: () => void;
 }) {
   const { data } = useStore();
   const fmt = (n: number) => formatMoney(n, data.displayCurrency, data.usdRate);
@@ -40,7 +42,10 @@ export default function Circles({
         <Display size={30} weight="black">
           Susu Circles
         </Display>
-        <Button title="+ New" onPress={onNew} small />
+        <View style={{ flexDirection: "row", gap: 8 }}>
+          <Button title="Join" variant="ghost" onPress={onJoin} small />
+          <Button title="+ New" onPress={onNew} small />
+        </View>
       </View>
 
       {data.circles.length === 0 && (

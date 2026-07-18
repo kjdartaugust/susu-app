@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 import { StatusBar } from "expo-status-bar";
 import {
@@ -20,8 +20,16 @@ import NewCircle from "./src/screens/NewCircle";
 import Goals from "./src/screens/Goals";
 import Settings from "./src/screens/Settings";
 import Auth from "./src/screens/Auth";
+import Join from "./src/screens/Join";
 
 type Tab = "home" | "circles" | "goals" | "settings";
+
+// A shared invite link opens the app at ?invite=TOKEN (web). On native this is
+// empty; deep-link handling can fill it later.
+const INITIAL_INVITE =
+  typeof window !== "undefined"
+    ? new URLSearchParams(window.location.search).get("invite") ?? ""
+    : "";
 
 const TABS: { key: Tab; label: string; icon: string }[] = [
   { key: "home", label: "Home", icon: "⌂" },
@@ -35,6 +43,21 @@ function Shell() {
   const [tab, setTab] = useState<Tab>("home");
   const [detailId, setDetailId] = useState<string | null>(null);
   const [creating, setCreating] = useState(false);
+  const [joining, setJoining] = useState(false);
+  const [inviteCode, setInviteCode] = useState("");
+  const invitedRef = useRef(false);
+
+  // Once signed in, if we opened from an invite link, jump straight to Join.
+  useEffect(() => {
+    if (status === "ready" && INITIAL_INVITE && !invitedRef.current) {
+      invitedRef.current = true;
+      setInviteCode(INITIAL_INVITE);
+      setJoining(true);
+      if (typeof window !== "undefined") {
+        window.history.replaceState({}, "", window.location.pathname);
+      }
+    }
+  }, [status]);
 
   if (status === "loading") return <Loader />;
   if (status === "signedOut")
@@ -45,7 +68,18 @@ function Shell() {
     );
 
   let content: React.ReactNode;
-  if (creating) {
+  if (joining) {
+    content = (
+      <Join
+        initialCode={inviteCode}
+        onCancel={() => setJoining(false)}
+        onJoined={() => {
+          setJoining(false);
+          setTab("circles");
+        }}
+      />
+    );
+  } else if (creating) {
     content = (
       <NewCircle
         onCancel={() => setCreating(false)}
@@ -72,6 +106,10 @@ function Shell() {
       <Circles
         onOpenCircle={(id) => setDetailId(id)}
         onNew={() => setCreating(true)}
+        onJoin={() => {
+          setInviteCode("");
+          setJoining(true);
+        }}
       />
     );
   } else if (tab === "goals") {
@@ -80,7 +118,7 @@ function Shell() {
     content = <Settings />;
   }
 
-  const hideTabBar = creating;
+  const hideTabBar = creating || joining;
 
   return (
     <SafeAreaView style={styles.root} edges={["top", "bottom"]}>

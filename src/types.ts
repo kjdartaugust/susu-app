@@ -18,6 +18,8 @@ export interface Circle {
   members: Member[]; // order = payout order
   /** key `${cycleIndex}:${memberId}` -> true when that member has paid */
   paid: Record<string, boolean>;
+  /** true when the signed-in user organizes this circle (vs. joined it). */
+  owner?: boolean;
 }
 
 export interface SavingsTxn {

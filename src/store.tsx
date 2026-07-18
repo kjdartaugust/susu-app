@@ -58,6 +58,10 @@ interface StoreValue {
   addGoal: (name: string, target: number) => Promise<void>;
   addGoalTxn: (goalId: string, amount: number, note: string) => Promise<void>;
   deleteGoal: (id: string) => Promise<void>;
+  // invites
+  createInvite: (circleId: string, memberId: string) => Promise<string>;
+  previewInvite: (token: string) => Promise<api.InvitePreview>;
+  acceptInvite: (token: string) => Promise<void>;
   // local display prefs
   setName: (name: string) => void;
   setDisplayCurrency: (c: Currency) => void;
@@ -229,6 +233,20 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     setServer(await api.deleteGoal(id));
   }, []);
 
+  /* --------------------------------------------------------- invites ---- */
+
+  const createInvite = useCallback(
+    (circleId: string, memberId: string) => api.createInvite(circleId, memberId),
+    []
+  );
+  const previewInvite = useCallback(
+    (token: string) => api.fetchInvitePreview(token),
+    []
+  );
+  const acceptInvite = useCallback(async (token: string) => {
+    setServer(await api.acceptInvite(token));
+  }, []);
+
   /* ----------------------------------------------------------- prefs ---- */
 
   const setName = useCallback(
@@ -268,6 +286,9 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
         addGoal,
         addGoalTxn,
         deleteGoal,
+        createInvite,
+        previewInvite,
+        acceptInvite,
         setName,
         setDisplayCurrency,
         toggleCurrency,

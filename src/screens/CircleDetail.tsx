@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { Alert, Pressable, ScrollView, Text, View } from "react-native";
+import { Alert, Pressable, ScrollView, Share, Text, View } from "react-native";
 import { useStore } from "../store";
 import { colors, radius } from "../theme";
 import { Avatar, Badge, Button, Card, Display } from "../ui";
@@ -23,11 +23,15 @@ export default function CircleDetail({
   circleId: string;
   onBack: () => void;
 }) {
-  const { data, togglePaid, deleteCircle } = useStore();
+  const { data, togglePaid, deleteCircle, createInvite } = useStore();
   const circle = data.circles.find((c) => c.id === circleId);
   const fmt = (n: number) => formatMoney(n, data.displayCurrency, data.usdRate);
   const liveIdx = circle ? currentCycleIndex(circle) : 0;
   const [viewIdx, setViewIdx] = useState(liveIdx);
+  const [invite, setInvite] = useState<{ name: string; link: string } | null>(
+    null
+  );
+  const [invitingId, setInvitingId] = useState<string | null>(null);
 
   if (!circle) {
     return (
@@ -62,6 +66,34 @@ export default function CircleDetail({
         },
       },
     ]);
+  }
+
+  async function inviteMember(m: { id: string; name: string }) {
+    if (!circle) return;
+    setInvitingId(m.id);
+    try {
+      const token = await createInvite(circle.id, m.id);
+      const origin =
+        typeof window !== "undefined" ? window.location.origin : "";
+      const link = origin ? `${origin}/?invite=${token}` : token;
+      setInvite({ name: m.name, link });
+      // Best-effort native share sheet; on web it may be unavailable, and the
+      // inline panel below still shows the link to copy.
+      try {
+        await Share.share({
+          message: `Join my susu circle "${circle.name}" on Susu — ${link}`,
+        });
+      } catch {
+        /* ignore */
+      }
+    } catch (e) {
+      Alert.alert(
+        "Couldn't create invite",
+        e instanceof Error ? e.message : "Please try again."
+      );
+    } finally {
+      setInvitingId(null);
+    }
   }
 
   return (
@@ -214,6 +246,23 @@ export default function CircleDetail({
                   {isRecipient ? " · collects this round" : ""}
                 </Text>
               </View>
+              {m.userId ? (
+                <View style={{ marginRight: 6 }}>
+                  <Badge text="Joined" tone="green" />
+                </View>
+              ) : (
+                circle.owner &&
+                m.name !== data.name && (
+                  <View style={{ marginRight: 6 }}>
+                    <Button
+                      title={invitingId === m.id ? "…" : "Invite"}
+                      variant="ghost"
+                      small
+                      onPress={() => inviteMember(m)}
+                    />
+                  </View>
+                )
+              )}
               <View
                 style={{
                   width: 28,
@@ -235,9 +284,41 @@ export default function CircleDetail({
         );
       })}
 
-      <View style={{ marginTop: 16 }}>
-        <Button title="Delete circle" variant="danger" onPress={confirmDelete} />
-      </View>
+      {invite && (
+        <Card style={{ marginTop: 16 }}>
+          <Text style={{ color: colors.text, fontWeight: "700", fontSize: 15 }}>
+            Invite link for {invite.name}
+          </Text>
+          <Text
+            selectable
+            style={{ color: colors.primary, marginTop: 8, fontSize: 13 }}
+          >
+            {invite.link}
+          </Text>
+          <Text style={{ color: colors.muted, fontSize: 12, marginTop: 8 }}>
+            Send this to {invite.name}. When they open it and sign in, they join
+            this circle.
+          </Text>
+          <View style={{ marginTop: 12 }}>
+            <Button
+              title="Done"
+              variant="ghost"
+              small
+              onPress={() => setInvite(null)}
+            />
+          </View>
+        </Card>
+      )}
+
+      {circle.owner && (
+        <View style={{ marginTop: 16 }}>
+          <Button
+            title="Delete circle"
+            variant="danger"
+            onPress={confirmDelete}
+          />
+        </View>
+      )}
     </ScrollView>
   );
 }
