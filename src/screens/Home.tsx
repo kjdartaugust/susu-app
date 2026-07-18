@@ -1,5 +1,5 @@
 import React from "react";
-import { Pressable, ScrollView, Text, View } from "react-native";
+import { Linking, Pressable, ScrollView, Text, View } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import { useStore } from "../store";
 import { colors, radius } from "../theme";
@@ -212,6 +212,57 @@ export default function Home({
             </Pressable>
           );
         })}
+      </View>
+
+      {/* Dollar card — the payout you'll be able to spend online (coming soon) */}
+      <View style={{ marginTop: 14 }}>
+        <SectionTitle>Dollar Card</SectionTitle>
+        <Pressable
+          onPress={() =>
+            Linking.openURL("https://virtual-dollar-card.vercel.app")
+          }
+        >
+          <View style={{ borderRadius: radius.lg, overflow: "hidden" }}>
+            <LinearGradient
+              colors={[colors.primaryDeep, colors.pink]}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 1 }}
+              style={{ padding: 20 }}
+            >
+              <Text
+                style={{
+                  color: "rgba(255,255,255,0.85)",
+                  fontWeight: "800",
+                  fontSize: 12,
+                  letterSpacing: 1,
+                  textTransform: "uppercase",
+                }}
+              >
+                Coming soon
+              </Text>
+              <Display
+                size={20}
+                weight="bold"
+                style={{ color: "#fff", marginTop: 8 }}
+              >
+                Spend your payouts in USD
+              </Display>
+              <Text
+                style={{
+                  color: "rgba(255,255,255,0.9)",
+                  marginTop: 8,
+                  lineHeight: 20,
+                }}
+              >
+                A virtual dollar card to pay for anything online — funded from
+                your susu payouts. Tap to learn more.
+              </Text>
+              <Text style={{ color: "#fff", marginTop: 14, fontWeight: "800" }}>
+                Learn more →
+              </Text>
+            </LinearGradient>
+          </View>
+        </Pressable>
       </View>
     </ScrollView>
   );
