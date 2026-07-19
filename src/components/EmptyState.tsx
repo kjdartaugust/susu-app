@@ -12,13 +12,15 @@ export default function EmptyState({
   body,
   children,
 }: {
-  glyph: string;
+  /** Omit where a larger illustration already sits above this state. */
+  glyph?: string;
   title: string;
   body: string;
   children?: React.ReactNode;
 }) {
   return (
     <View style={{ alignItems: "center", paddingVertical: 34, paddingHorizontal: 8 }}>
+      {glyph && (
       <View
         style={{
           width: 64,
@@ -34,6 +36,7 @@ export default function EmptyState({
       >
         <Text style={{ fontSize: 27, color: colors.primary }}>{glyph}</Text>
       </View>
+      )}
 
       <Display size={21} weight="bold" style={{ textAlign: "center" }}>
         {title}

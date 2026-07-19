@@ -32,6 +32,8 @@ export function hasToken(): boolean {
 export interface SusuState {
   circles: Circle[];
   goals: Goal[];
+  /** The account's own name, used to greet the user on any device. */
+  userName: string;
 }
 
 async function api<T>(
@@ -102,7 +104,7 @@ export async function fetchState(): Promise<SusuState> {
     "GET",
     "/api/susu/state"
   );
-  return state ?? { circles: [], goals: [] };
+  return state ?? { circles: [], goals: [], userName: "" };
 }
 
 export async function createCircle(input: {

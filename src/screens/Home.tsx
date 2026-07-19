@@ -84,7 +84,6 @@ export default function Home({
             <CircleRing size={208} showCaption={false} />
           </View>
           <EmptyState
-            glyph="◍"
             title="Start your first circle"
             body="Everyone puts in the same amount each round, and one member collects the whole pot — turn by turn."
           >

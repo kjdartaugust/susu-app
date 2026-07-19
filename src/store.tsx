@@ -24,10 +24,17 @@ interface Prefs {
   usdRate: number;
 }
 const DEFAULT_PREFS: Prefs = {
-  name: "Me",
+  // Empty, not "Me" — an unset local name lets the account's real name (from
+  // the server) do the greeting instead.
+  name: "",
   displayCurrency: "GHS",
   usdRate: DEFAULT_USD_RATE,
 };
+
+/** "Kwesi Test" -> "Kwesi"; a greeting wants the first name only. */
+// Tolerates undefined: a client can briefly outrun the backend that supplies
+// userName, and a greeting must never crash the app.
+const firstName = (full?: string) => (full ?? "").trim().split(/\s+/)[0] ?? "";
 
 // loading = still checking for a saved session; signedOut = show the auth
 // screen; ready = we have the user's data.
@@ -76,6 +83,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
   const [server, setServer] = useState<api.SusuState>({
     circles: [],
     goals: [],
+    userName: "",
   });
   const [status, setStatus] = useState<Status>("loading");
   const prefsLoaded = useRef(false);
@@ -123,7 +131,9 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     goals: server.goals,
     displayCurrency: prefs.displayCurrency,
     usdRate: prefs.usdRate,
-    name: prefs.name,
+    // The account's own name greets you on any device you sign in from; a name
+    // set locally in Settings still wins.
+    name: prefs.name || firstName(server.userName) || "there",
   };
 
   /* ------------------------------------------------------------ auth ---- */
@@ -153,7 +163,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
 
   const logout = useCallback(async () => {
     await api.logout();
-    setServer({ circles: [], goals: [] });
+    setServer({ circles: [], goals: [], userName: "" });
     setStatus("signedOut");
   }, []);
 
