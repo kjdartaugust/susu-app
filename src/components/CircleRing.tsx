@@ -131,32 +131,28 @@ function Seat({
         transform: [
           { scale: a.interpolate({ inputRange: [0, 1], outputRange: [1, 1.14] }) },
         ],
-        backgroundColor: a.interpolate({
-          inputRange: [0, 1],
-          outputRange: [colors.cardAlt, colors.gold],
-        }),
-        borderColor: a.interpolate({
-          inputRange: [0, 1],
-          outputRange: [colors.border, colors.gold],
-        }),
+        // Colour follows the state directly rather than an interpolation. If a
+        // frame is dropped or throttled, an animated colour can lag a step
+        // behind and show gold on one member while the centre names another —
+        // so only scale and glow animate. Motion is still there; a wrong
+        // answer never is.
+        backgroundColor: active ? colors.gold : colors.cardAlt,
+        borderColor: active ? colors.gold : colors.border,
         shadowColor: colors.gold,
         shadowOpacity: a.interpolate({ inputRange: [0, 1], outputRange: [0, 0.55] }),
         shadowRadius: 18,
         shadowOffset: { width: 0, height: 0 },
       }}
     >
-      <Animated.Text
+      <Text
         style={{
           fontWeight: "800",
           fontSize: size * 0.3,
-          color: a.interpolate({
-            inputRange: [0, 1],
-            outputRange: [colors.muted, "#241A05"],
-          }),
+          color: active ? "#241A05" : colors.muted,
         }}
       >
         {name.slice(0, 2)}
-      </Animated.Text>
+      </Text>
     </Animated.View>
   );
 }
