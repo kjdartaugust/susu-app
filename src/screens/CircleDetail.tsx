@@ -3,6 +3,7 @@ import { Alert, Pressable, ScrollView, Share, Text, View } from "react-native";
 import { useStore } from "../store";
 import { colors, radius } from "../theme";
 import { Avatar, Badge, Button, Card, Display } from "../ui";
+import CircleRing from "../components/CircleRing";
 import {
   FREQ_LABEL,
   currentCycleIndex,
@@ -115,6 +116,18 @@ export default function CircleDetail({
         {fmt(potSize(circle))}
       </Text>
 
+      {/* The same ring as the welcome screen, now showing this actual circle:
+          who is in it and who collects the round being viewed. */}
+      <View style={{ alignItems: "center", marginTop: 18 }}>
+        <CircleRing
+          size={224}
+          members={circle.members.map((m) => m.name)}
+          amount={fmt(potSize(circle))}
+          step={recipient ? circle.members.findIndex((m) => m.id === recipient.id) : 0}
+          showCaption={false}
+        />
+      </View>
+
       {/* Cycle selector */}
       <View style={{ marginTop: 20 }}>
         <ScrollView
@@ -214,6 +227,9 @@ export default function CircleDetail({
       {circle.members.map((m, i) => {
         const paid = !!circle.paid[paidKey(viewIdx, m.id)];
         const isRecipient = recipient?.id === m.id;
+        // Match on account id, not display name: member names are free text and
+        // two people in a circle can easily share one.
+        const isYou = !!data.userId && m.userId === data.userId;
         return (
           <Pressable
             key={m.id}
@@ -239,7 +255,7 @@ export default function CircleDetail({
               <View style={{ flex: 1 }}>
                 <Text style={{ color: colors.text, fontWeight: "700", fontSize: 16 }}>
                   {m.name}
-                  {m.name === data.name ? "  (you)" : ""}
+                  {isYou ? "  (you)" : ""}
                 </Text>
                 <Text style={{ color: colors.muted, fontSize: 13 }}>
                   Position {i + 1}
@@ -252,7 +268,7 @@ export default function CircleDetail({
                 </View>
               ) : (
                 circle.owner &&
-                m.name !== data.name && (
+                !isYou && (
                   <View style={{ marginRight: 6 }}>
                     <Button
                       title={invitingId === m.id ? "…" : "Invite"}

@@ -46,4 +46,7 @@ export interface AppData {
   /** GHS per 1 USD, used to convert for display + entry. */
   usdRate: number;
   name: string; // the user's display name
+  /** The signed-in account's id — identifies which circle member is the user.
+   *  Empty while signed out. */
+  userId: string;
 }

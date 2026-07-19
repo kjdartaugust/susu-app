@@ -43,9 +43,13 @@ export default function Home({
   const totalInSusu = data.circles.reduce((sum, c) => {
     const idx = currentCycleIndex(c);
     let paidCount = 0;
-    const me = c.members.find((m) => m.name === data.name) ?? c.members[0];
+    // Identify yourself by account id. The old name match fell back to the
+    // first member, which quietly counted someone else's contributions as
+    // yours; showing nothing is better than showing a confident wrong total.
+    const me = c.members.find((m) => m.userId && m.userId === data.userId);
+    if (!me) return sum;
     for (let i = 0; i <= idx; i++) {
-      if (me && c.paid[`${i}:${me.id}`]) paidCount++;
+      if (c.paid[`${i}:${me.id}`]) paidCount++;
     }
     return sum + paidCount * c.contribution;
   }, 0);

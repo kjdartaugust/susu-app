@@ -1,41 +1,53 @@
 import React, { useEffect, useRef, useState } from "react";
-import { Animated, Easing, Text, View } from "react-native";
+import { Animated, Text, View } from "react-native";
 import { colors, fonts } from "../theme";
 
 // The product, drawn. Members sit around a ring and the pot moves one seat per
 // round — which *is* susu, so this explains the app faster than any paragraph.
 // Built from plain Views + trig so it needs no SVG/animation dependency.
+//
+// Uncontrolled (welcome screen) it rotates through demo members on its own.
+// Controlled (a real circle) it takes that circle's members and highlights
+// whoever collects the round being viewed.
 
-const MEMBERS = ["Ama", "Kofi", "Yaa", "Kwame", "Efua", "Nii"];
+const DEMO_MEMBERS = ["Ama", "Kofi", "Yaa", "Kwame", "Efua", "Nii"];
+const DEMO_AMOUNT = "GH₵1,200";
 
 export default function CircleRing({
   size = 260,
-  /** Fix the highlight to one seat (used by the explainer); omit to rotate. */
+  members = DEMO_MEMBERS,
+  amount = DEMO_AMOUNT,
+  /** Pin the highlight to one seat; omit to rotate on a timer. */
   step,
   /** ms per round when rotating. */
   interval = 1900,
   showCaption = true,
 }: {
   size?: number;
+  members?: string[];
+  amount?: string;
   step?: number;
   interval?: number;
   showCaption?: boolean;
 }) {
-  const n = MEMBERS.length;
-  const [active, setActive] = useState(step ?? 0);
+  const n = Math.max(members.length, 1);
+  const [spin, setSpin] = useState(0);
 
-  // Rotate the pot, unless the caller pinned a step.
+  // Only run the timer when uncontrolled — a real circle is driven by the round
+  // the user is looking at.
   useEffect(() => {
-    if (step !== undefined) {
-      setActive(step);
-      return;
-    }
-    const id = setInterval(() => setActive((i) => (i + 1) % n), interval);
+    if (step !== undefined) return;
+    const id = setInterval(() => setSpin((i) => (i + 1) % n), interval);
     return () => clearInterval(id);
   }, [step, interval, n]);
 
-  const dot = size * 0.185;
-  const radius = size / 2 - dot / 2;
+  const active = step === undefined ? spin % n : ((step % n) + n) % n;
+
+  // Seats must not collide once a circle has many members, so cap the dot to
+  // the arc available to each one.
+  const radius = size * 0.5 * 0.815;
+  const arc = (2 * Math.PI * radius) / n;
+  const dot = Math.max(26, Math.min(size * 0.185, arc * 0.82));
   const center = size / 2;
 
   return (
@@ -45,24 +57,24 @@ export default function CircleRing({
         <View
           style={{
             position: "absolute",
-            left: dot / 2,
-            top: dot / 2,
-            width: size - dot,
-            height: size - dot,
-            borderRadius: (size - dot) / 2,
+            left: center - radius,
+            top: center - radius,
+            width: radius * 2,
+            height: radius * 2,
+            borderRadius: radius,
             borderWidth: 1,
             borderColor: colors.hairline,
           }}
         />
 
-        <Hub size={size} name={MEMBERS[active]} />
+        <Hub size={size} name={members[active] ?? ""} amount={amount} />
 
-        {MEMBERS.map((name, i) => {
+        {members.map((name, i) => {
           // -90° so the first seat sits at the top of the ring.
           const angle = (i / n) * 2 * Math.PI - Math.PI / 2;
           return (
             <Seat
-              key={name}
+              key={`${name}-${i}`}
               name={name}
               size={dot}
               active={i === active}
@@ -106,12 +118,10 @@ function Seat({
   const a = useRef(new Animated.Value(active ? 1 : 0)).current;
 
   useEffect(() => {
-    Animated.timing(a, {
+    Animated.spring(a, {
       toValue: active ? 1 : 0,
-      // Short enough that the seat and the centre label never disagree about
-      // whose turn it is mid-handoff.
-      duration: 260,
-      easing: Easing.out(Easing.cubic),
+      friction: 7,
+      tension: 90,
       useNativeDriver: false,
     }).start();
   }, [active, a]);
@@ -158,7 +168,15 @@ function Seat({
 }
 
 /** Centre of the ring: the pot, and who's collecting it this round. */
-function Hub({ size, name }: { size: number; name: string }) {
+function Hub({
+  size,
+  name,
+  amount,
+}: {
+  size: number;
+  name: string;
+  amount: string;
+}) {
   const a = useRef(new Animated.Value(1)).current;
 
   // A small pulse on hand-off sells that the pot actually moved.
@@ -172,42 +190,50 @@ function Hub({ size, name }: { size: number; name: string }) {
     }).start();
   }, [name, a]);
 
+  // Longer amounts (a big pot, or USD) must still clear the seats, so the type
+  // shrinks with the string rather than overflowing the ring.
+  const base = size * 0.1;
+  const fit = amount.length > 9 ? (base * 9) / amount.length : base;
+  const amountSize = Math.max(size * 0.062, fit);
+
   return (
     <View
       style={{
         position: "absolute",
-        left: size * 0.22,
-        top: size * 0.22,
-        width: size * 0.56,
-        height: size * 0.56,
+        left: size * 0.2,
+        top: size * 0.2,
+        width: size * 0.6,
+        height: size * 0.6,
         alignItems: "center",
         justifyContent: "center",
       }}
     >
       <Animated.View style={{ alignItems: "center", transform: [{ scale: a }] }}>
         <Text
+          numberOfLines={1}
           style={{
             fontFamily: fonts.displayBold,
-            // Kept well inside the seats' inner edge so the pot never collides
-            // with a member's avatar.
-            fontSize: size * 0.1,
+            fontSize: amountSize,
             color: colors.text,
             letterSpacing: -0.5,
           }}
         >
-          GH₵1,200
+          {amount}
         </Text>
-        <Text
-          style={{
-            color: colors.gold,
-            fontWeight: "700",
-            fontSize: size * 0.048,
-            marginTop: 5,
-            letterSpacing: 0.3,
-          }}
-        >
-          {name} collects
-        </Text>
+        {!!name && (
+          <Text
+            numberOfLines={1}
+            style={{
+              color: colors.gold,
+              fontWeight: "700",
+              fontSize: size * 0.048,
+              marginTop: 5,
+              letterSpacing: 0.3,
+            }}
+          >
+            {name} collects
+          </Text>
+        )}
       </Animated.View>
     </View>
   );

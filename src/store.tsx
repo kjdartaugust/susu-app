@@ -84,6 +84,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     circles: [],
     goals: [],
     userName: "",
+    userId: "",
   });
   const [status, setStatus] = useState<Status>("loading");
   const prefsLoaded = useRef(false);
@@ -134,6 +135,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     // The account's own name greets you on any device you sign in from; a name
     // set locally in Settings still wins.
     name: prefs.name || firstName(server.userName) || "there",
+    userId: server.userId,
   };
 
   /* ------------------------------------------------------------ auth ---- */
@@ -163,7 +165,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
 
   const logout = useCallback(async () => {
     await api.logout();
-    setServer({ circles: [], goals: [], userName: "" });
+    setServer({ circles: [], goals: [], userName: "", userId: "" });
     setStatus("signedOut");
   }, []);
 

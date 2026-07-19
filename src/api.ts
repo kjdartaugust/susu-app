@@ -34,6 +34,8 @@ export interface SusuState {
   goals: Goal[];
   /** The account's own name, used to greet the user on any device. */
   userName: string;
+  /** The account's id, used to tell which circle member is the user. */
+  userId: string;
 }
 
 async function api<T>(
@@ -104,7 +106,7 @@ export async function fetchState(): Promise<SusuState> {
     "GET",
     "/api/susu/state"
   );
-  return state ?? { circles: [], goals: [], userName: "" };
+  return state ?? { circles: [], goals: [], userName: "", userId: "" };
 }
 
 export async function createCircle(input: {
