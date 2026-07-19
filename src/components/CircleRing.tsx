@@ -108,7 +108,9 @@ function Seat({
   useEffect(() => {
     Animated.timing(a, {
       toValue: active ? 1 : 0,
-      duration: 420,
+      // Short enough that the seat and the centre label never disagree about
+      // whose turn it is mid-handoff.
+      duration: 260,
       easing: Easing.out(Easing.cubic),
       useNativeDriver: false,
     }).start();
@@ -192,7 +194,7 @@ function Hub({ size, name }: { size: number; name: string }) {
             fontFamily: fonts.displayBold,
             // Kept well inside the seats' inner edge so the pot never collides
             // with a member's avatar.
-            fontSize: size * 0.113,
+            fontSize: size * 0.1,
             color: colors.text,
             letterSpacing: -0.5,
           }}
