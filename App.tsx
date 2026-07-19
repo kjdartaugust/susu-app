@@ -129,6 +129,11 @@ function Shell() {
       <Home
         onOpenCircle={(id) => setDetailId(id)}
         onGoTab={(t) => setTab(t as Tab)}
+        onNew={() => setCreating(true)}
+        onJoin={() => {
+          setInviteCode("");
+          setJoining(true);
+        }}
       />
     );
   } else if (tab === "circles") {

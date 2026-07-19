@@ -11,6 +11,7 @@ import { useStore } from "../store";
 import { colors, radius } from "../theme";
 import { Button, Card, CurrencyToggle, Display, Field, Progress } from "../ui";
 import { CURRENCY_SYMBOL, formatMoney, goalSaved, toBaseGhs } from "../logic";
+import EmptyState from "../components/EmptyState";
 
 export default function Goals() {
   const { data, addGoal, addGoalTxn, deleteGoal } = useStore();
@@ -82,11 +83,13 @@ export default function Goals() {
       </View>
 
       {data.goals.length === 0 && (
-        <Card>
-          <Text style={{ color: colors.muted }}>
-            Set a target and stash money toward it — school fees, rent, a phone.
-          </Text>
-        </Card>
+        <EmptyState
+          glyph="◎"
+          title="No goals yet"
+          body="Set a target and stash money toward it — school fees, rent, a new phone."
+        >
+          <Button title="Add a goal" onPress={() => setNewOpen(true)} />
+        </EmptyState>
       )}
 
       {data.goals.map((g) => {

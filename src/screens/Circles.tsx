@@ -3,6 +3,7 @@ import { Pressable, ScrollView, Text, View } from "react-native";
 import { useStore } from "../store";
 import { colors } from "../theme";
 import { Avatar, Badge, Button, Card, Display } from "../ui";
+import EmptyState from "../components/EmptyState";
 import {
   currentCycleIndex,
   formatMoney,
@@ -49,18 +50,14 @@ export default function Circles({
       </View>
 
       {data.circles.length === 0 && (
-        <Card>
-          <Text style={{ color: colors.text, fontWeight: "700", fontSize: 16 }}>
-            Start your first circle
-          </Text>
-          <Text style={{ color: colors.muted, marginTop: 6, lineHeight: 20 }}>
-            A susu circle is a group where everyone contributes the same amount
-            each round, and one member collects the whole pot in turn.
-          </Text>
-          <View style={{ marginTop: 14 }}>
-            <Button title="Create a circle" onPress={onNew} />
-          </View>
-        </Card>
+        <EmptyState
+          glyph="◍"
+          title="No circles yet"
+          body="A circle is a group where everyone contributes the same amount each round, and one member collects the whole pot in turn."
+        >
+          <Button title="Create a circle" onPress={onNew} />
+          <Button title="Join with a code" variant="ghost" onPress={onJoin} />
+        </EmptyState>
       )}
 
       {data.circles.map((c) => {

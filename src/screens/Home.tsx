@@ -6,12 +6,15 @@ import { colors, radius } from "../theme";
 import {
   Avatar,
   Badge,
+  Button,
   Card,
   CurrencyToggle,
   Display,
   Progress,
   SectionTitle,
 } from "../ui";
+import CircleRing from "../components/CircleRing";
+import EmptyState from "../components/EmptyState";
 import {
   currentCycleIndex,
   formatMoney,
@@ -26,9 +29,13 @@ import {
 export default function Home({
   onOpenCircle,
   onGoTab,
+  onNew,
+  onJoin,
 }: {
   onOpenCircle: (id: string) => void;
   onGoTab: (t: string) => void;
+  onNew: () => void;
+  onJoin: () => void;
 }) {
   const { data } = useStore();
   const fmt = (n: number) => formatMoney(n, data.displayCurrency, data.usdRate);
@@ -44,6 +51,11 @@ export default function Home({
   }, 0);
 
   const totalSaved = data.goals.reduce((s, g) => s + goalSaved(g), 0);
+
+  // A brand-new account has nothing to total up. Showing a big GH₵0 and two
+  // "nothing here" boxes is a bleak first screen, so lead with the invitation
+  // to start instead.
+  const firstRun = data.circles.length === 0 && data.goals.length === 0;
 
   return (
     <ScrollView
@@ -66,10 +78,26 @@ export default function Home({
         {data.name} 👋
       </Display>
 
+      {firstRun ? (
+        <View style={{ marginTop: 4 }}>
+          <View style={{ alignItems: "center", marginBottom: 4 }}>
+            <CircleRing size={208} showCaption={false} />
+          </View>
+          <EmptyState
+            glyph="◍"
+            title="Start your first circle"
+            body="Everyone puts in the same amount each round, and one member collects the whole pot — turn by turn."
+          >
+            <Button title="Create a circle" onPress={onNew} />
+            <Button title="Join with a code" variant="ghost" onPress={onJoin} />
+          </EmptyState>
+        </View>
+      ) : (
+        <>
       {/* Balance hero */}
       <View style={{ borderRadius: radius.lg, overflow: "hidden" }}>
         <LinearGradient
-          colors={[colors.primaryDeep, colors.primarySolid, colors.pink]}
+          colors={[colors.primaryDeep, colors.primarySolid]}
           start={{ x: 0, y: 0 }}
           end={{ x: 1, y: 1 }}
           style={{ padding: 22 }}
@@ -110,13 +138,15 @@ export default function Home({
       <View style={{ marginTop: 26 }}>
         <SectionTitle>Your Susu Circles</SectionTitle>
         {data.circles.length === 0 && (
-          <Pressable onPress={() => onGoTab("circles")}>
-            <Card>
-              <Text style={{ color: colors.muted }}>
-                No circles yet. Tap “Circles” to start one.
-              </Text>
-            </Card>
-          </Pressable>
+          <Card>
+            <Text style={{ color: colors.muted, lineHeight: 20 }}>
+              No circles yet — save with a group and take turns collecting.
+            </Text>
+            <View style={{ marginTop: 12, flexDirection: "row", gap: 8 }}>
+              <Button title="Create a circle" onPress={onNew} small />
+              <Button title="Join" variant="ghost" onPress={onJoin} small />
+            </View>
+          </Card>
         )}
         {data.circles.map((c) => {
           const idx = currentCycleIndex(c);
@@ -181,8 +211,11 @@ export default function Home({
         {data.goals.length === 0 && (
           <Pressable onPress={() => onGoTab("goals")}>
             <Card>
-              <Text style={{ color: colors.muted }}>
-                No goals yet. Tap “Goals” to add one.
+              <Text style={{ color: colors.muted, lineHeight: 20 }}>
+                No goals yet — set a target like school fees or rent.
+              </Text>
+              <Text style={{ color: colors.primary, marginTop: 10, fontWeight: "700" }}>
+                Add a goal →
               </Text>
             </Card>
           </Pressable>
@@ -213,6 +246,8 @@ export default function Home({
           );
         })}
       </View>
+        </>
+      )}
 
       {/* Dollar card — the payout you'll be able to spend online (coming soon) */}
       <View style={{ marginTop: 14 }}>
@@ -222,46 +257,21 @@ export default function Home({
             Linking.openURL("https://virtual-dollar-card.vercel.app")
           }
         >
-          <View style={{ borderRadius: radius.lg, overflow: "hidden" }}>
-            <LinearGradient
-              colors={[colors.primaryDeep, colors.pink]}
-              start={{ x: 0, y: 0 }}
-              end={{ x: 1, y: 1 }}
-              style={{ padding: 20 }}
-            >
-              <Text
-                style={{
-                  color: "rgba(255,255,255,0.85)",
-                  fontWeight: "800",
-                  fontSize: 12,
-                  letterSpacing: 1,
-                  textTransform: "uppercase",
-                }}
-              >
-                Coming soon
-              </Text>
-              <Display
-                size={20}
-                weight="bold"
-                style={{ color: "#fff", marginTop: 8 }}
-              >
-                Spend your payouts in USD
-              </Display>
-              <Text
-                style={{
-                  color: "rgba(255,255,255,0.9)",
-                  marginTop: 8,
-                  lineHeight: 20,
-                }}
-              >
-                A virtual dollar card to pay for anything online — funded from
-                your susu payouts. Tap to learn more.
-              </Text>
-              <Text style={{ color: "#fff", marginTop: 14, fontWeight: "800" }}>
-                Learn more →
-              </Text>
-            </LinearGradient>
-          </View>
+          {/* Deliberately not a gradient: the balance above is the one hero on
+              this screen, and a second one would compete with it. */}
+          <Card style={{ borderColor: colors.goldSoft }}>
+            <Badge text="Coming soon" tone="gold" />
+            <Display size={20} weight="bold" style={{ marginTop: 12 }}>
+              Spend your payouts in USD
+            </Display>
+            <Text style={{ color: colors.muted, marginTop: 8, lineHeight: 20 }}>
+              A virtual dollar card to pay for anything online — funded from
+              your susu payouts.
+            </Text>
+            <Text style={{ color: colors.gold, marginTop: 14, fontWeight: "800" }}>
+              Learn more →
+            </Text>
+          </Card>
         </Pressable>
       </View>
     </ScrollView>
