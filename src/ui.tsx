@@ -133,6 +133,7 @@ export function Button({
 
 export function Field({
   label,
+  style,
   ...props
 }: { label: string } & TextInputProps) {
   return (
@@ -140,7 +141,10 @@ export function Field({
       <Text style={styles.fieldLabel}>{label}</Text>
       <TextInput
         placeholderTextColor={colors.faint}
-        style={styles.input}
+        // Merged, not overwritten: a caller passing `style` (the multiline
+        // members box does) used to replace the base input styles wholesale
+        // and lose the text colour, rendering near-black text on a dark field.
+        style={[styles.input, style]}
         {...props}
       />
     </View>
