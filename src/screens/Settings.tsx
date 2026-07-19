@@ -1,8 +1,9 @@
 import React, { useState } from "react";
-import { Alert, Pressable, ScrollView, Text, View } from "react-native";
+import { Pressable, ScrollView, Text, View } from "react-native";
 import { useStore } from "../store";
 import { colors, radius } from "../theme";
 import { Button, Card, Display, Field } from "../ui";
+import { confirm, notify } from "../dialog";
 import { CURRENCY_LABEL, formatMoney } from "../logic";
 import { Currency } from "../types";
 
@@ -84,7 +85,7 @@ export default function Settings() {
             const r = Number(rate);
             if (r > 0) {
               setUsdRate(r);
-              Alert.alert("Saved", `Using GH₵${r} = $1.`);
+              notify("Saved", `Using GH₵${r} = $1.`);
             }
           }}
         />
@@ -109,7 +110,7 @@ export default function Settings() {
           small
           onPress={() => {
             setName(name.trim());
-            Alert.alert("Saved", "Your name has been updated.");
+            notify("Saved", "Your name has been updated.");
           }}
         />
       </Card>
@@ -139,16 +140,20 @@ export default function Settings() {
           title="Sign out"
           variant="danger"
           onPress={() =>
-            Alert.alert("Sign out?", "You can sign back in anytime.", [
-              { text: "Cancel", style: "cancel" },
-              {
-                text: "Sign out",
-                style: "destructive",
-                onPress: () => {
-                  logout().catch(() => {});
-                },
+            confirm({
+              title: "Sign out?",
+              message: "You can sign back in anytime.",
+              confirmLabel: "Sign out",
+              destructive: true,
+              onConfirm: () => {
+                logout().catch((e) =>
+                  notify(
+                    "Couldn't sign out",
+                    e instanceof Error ? e.message : "Please try again."
+                  )
+                );
               },
-            ])
+            })
           }
         />
       </Card>

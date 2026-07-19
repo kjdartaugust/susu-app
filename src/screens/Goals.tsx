@@ -1,6 +1,5 @@
 import React, { useState } from "react";
 import {
-  Alert,
   Modal,
   Pressable,
   ScrollView,
@@ -10,6 +9,7 @@ import {
 import { useStore } from "../store";
 import { colors, radius } from "../theme";
 import { Button, Card, CurrencyToggle, Display, Field, Progress } from "../ui";
+import { confirm, notify } from "../dialog";
 import { CURRENCY_SYMBOL, formatMoney, goalSaved, toBaseGhs } from "../logic";
 import EmptyState from "../components/EmptyState";
 
@@ -33,7 +33,7 @@ export default function Goals() {
       setGTarget("");
       setNewOpen(false);
     } catch (e) {
-      Alert.alert(
+      notify(
         "Couldn't create goal",
         e instanceof Error ? e.message : "Please try again."
       );
@@ -52,7 +52,7 @@ export default function Goals() {
       setDepNote("");
       setDepOpen(null);
     } catch (e) {
-      Alert.alert(
+      notify(
         "Couldn't save",
         e instanceof Error ? e.message : "Please try again."
       );
@@ -110,21 +110,20 @@ export default function Goals() {
               </Display>
               <Pressable
                 onPress={() =>
-                  Alert.alert("Delete goal?", g.name, [
-                    { text: "Cancel", style: "cancel" },
-                    {
-                      text: "Delete",
-                      style: "destructive",
-                      onPress: () => {
-                        deleteGoal(g.id).catch((e) =>
-                          Alert.alert(
-                            "Couldn't delete",
-                            e instanceof Error ? e.message : "Please try again."
-                          )
-                        );
-                      },
+                  confirm({
+                    title: "Delete goal?",
+                    message: g.name,
+                    confirmLabel: "Delete",
+                    destructive: true,
+                    onConfirm: () => {
+                      deleteGoal(g.id).catch((e) =>
+                        notify(
+                          "Couldn't delete",
+                          e instanceof Error ? e.message : "Please try again."
+                        )
+                      );
                     },
-                  ])
+                  })
                 }
               >
                 <Text style={{ color: colors.muted, fontSize: 20 }}>⋯</Text>

@@ -1,8 +1,9 @@
 import React, { useState } from "react";
-import { Alert, Pressable, ScrollView, Share, Text, View } from "react-native";
+import { Pressable, ScrollView, Share, Text, View } from "react-native";
 import { useStore } from "../store";
 import { colors, radius } from "../theme";
 import { Avatar, Badge, Button, Card, Display } from "../ui";
+import { confirm, notify } from "../dialog";
 import CircleRing from "../components/CircleRing";
 import {
   FREQ_LABEL,
@@ -49,24 +50,23 @@ export default function CircleDetail({
   const isLive = viewIdx === liveIdx;
 
   function confirmDelete() {
-    Alert.alert("Delete circle?", `“${circle!.name}” will be removed.`, [
-      { text: "Cancel", style: "cancel" },
-      {
-        text: "Delete",
-        style: "destructive",
-        onPress: async () => {
-          try {
-            await deleteCircle(circle!.id);
-            onBack();
-          } catch (e) {
-            Alert.alert(
-              "Couldn't delete",
-              e instanceof Error ? e.message : "Please try again."
-            );
-          }
-        },
+    confirm({
+      title: "Delete circle?",
+      message: `“${circle!.name}” will be removed.`,
+      confirmLabel: "Delete",
+      destructive: true,
+      onConfirm: async () => {
+        try {
+          await deleteCircle(circle!.id);
+          onBack();
+        } catch (e) {
+          notify(
+            "Couldn't delete",
+            e instanceof Error ? e.message : "Please try again."
+          );
+        }
       },
-    ]);
+    });
   }
 
   async function inviteMember(m: { id: string; name: string }) {
@@ -88,7 +88,7 @@ export default function CircleDetail({
         /* ignore */
       }
     } catch (e) {
-      Alert.alert(
+      notify(
         "Couldn't create invite",
         e instanceof Error ? e.message : "Please try again."
       );
@@ -235,7 +235,7 @@ export default function CircleDetail({
             key={m.id}
             onPress={() => {
               togglePaid(circle.id, viewIdx, m.id).catch((e) =>
-                Alert.alert(
+                notify(
                   "Couldn't save",
                   e instanceof Error ? e.message : "Please try again."
                 )

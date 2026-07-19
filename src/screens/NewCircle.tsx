@@ -1,8 +1,9 @@
 import React, { useState } from "react";
-import { Alert, Pressable, ScrollView, Text, View } from "react-native";
+import { Pressable, ScrollView, Text, View } from "react-native";
 import { useStore } from "../store";
 import { colors, radius } from "../theme";
 import { Button, Card, Display, Field } from "../ui";
+import { notify } from "../dialog";
 import { CURRENCY_SYMBOL, FREQ_LABEL, toBaseGhs, uid } from "../logic";
 import { Frequency } from "../types";
 
@@ -46,7 +47,7 @@ export default function NewCircle({
       });
       if (id) onDone(id);
     } catch (e) {
-      Alert.alert(
+      notify(
         "Couldn't create circle",
         e instanceof Error ? e.message : "Please try again."
       );
