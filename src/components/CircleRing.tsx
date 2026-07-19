@@ -190,7 +190,9 @@ function Hub({ size, name }: { size: number; name: string }) {
         <Text
           style={{
             fontFamily: fonts.displayBold,
-            fontSize: size * 0.145,
+            // Kept well inside the seats' inner edge so the pot never collides
+            // with a member's avatar.
+            fontSize: size * 0.113,
             color: colors.text,
             letterSpacing: -0.5,
           }}
@@ -201,8 +203,8 @@ function Hub({ size, name }: { size: number; name: string }) {
           style={{
             color: colors.gold,
             fontWeight: "700",
-            fontSize: size * 0.052,
-            marginTop: 4,
+            fontSize: size * 0.048,
+            marginTop: 5,
             letterSpacing: 0.3,
           }}
         >

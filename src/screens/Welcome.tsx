@@ -26,6 +26,11 @@ export default function Welcome({
         paddingTop: 40,
         paddingBottom: 28,
         justifyContent: "space-between",
+        // Phone-shaped even on a wide browser, so the web preview reads like
+        // the app rather than a stretched page.
+        width: "100%",
+        maxWidth: 460,
+        alignSelf: "center",
       }}
     >
       <View>
@@ -95,6 +100,9 @@ function HowItWorks({
         paddingHorizontal: 24,
         paddingTop: 36,
         paddingBottom: 44,
+        width: "100%",
+        maxWidth: 460,
+        alignSelf: "center",
       }}
     >
       <Pressable onPress={onBack} hitSlop={10} style={{ marginBottom: 16 }}>
