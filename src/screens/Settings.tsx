@@ -7,8 +7,9 @@ import { CURRENCY_LABEL, formatMoney } from "../logic";
 import { Currency } from "../types";
 
 export default function Settings() {
-  const { data, setName, setDisplayCurrency, setUsdRate, logout } = useStore();
-  const [name, setLocalName] = useState(data.name);
+  const { data, nameOverride, setName, setDisplayCurrency, setUsdRate, logout } =
+    useStore();
+  const [name, setLocalName] = useState(nameOverride);
   const [rate, setRate] = useState(String(data.usdRate));
 
   return (
@@ -98,13 +99,16 @@ export default function Settings() {
           label="Your name"
           value={name}
           onChangeText={setLocalName}
-          placeholder="Your name"
+          // Placeholder, not value: an empty override means "use the name on
+          // the account", and pre-filling the box would save the greeting text
+          // back as a real name.
+          placeholder={data.name}
         />
         <Button
           title="Save name"
           small
           onPress={() => {
-            setName(name.trim() || "Me");
+            setName(name.trim());
             Alert.alert("Saved", "Your name has been updated.");
           }}
         />

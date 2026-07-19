@@ -70,6 +70,9 @@ interface StoreValue {
   previewInvite: (token: string) => Promise<api.InvitePreview>;
   acceptInvite: (token: string) => Promise<void>;
   // local display prefs
+  /** The locally-set name override, empty when the account name is in use.
+   *  Settings edits this; `data.name` is the resolved value for greeting. */
+  nameOverride: string;
   setName: (name: string) => void;
   setDisplayCurrency: (c: Currency) => void;
   toggleCurrency: () => void;
@@ -288,6 +291,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       value={{
         data,
         status,
+        nameOverride: prefs.name,
         signup,
         login,
         logout,
