@@ -22,6 +22,7 @@ import Settings from "./src/screens/Settings";
 import Auth from "./src/screens/Auth";
 import Join from "./src/screens/Join";
 import Welcome from "./src/screens/Welcome";
+import Offline from "./src/screens/Offline";
 
 type Tab = "home" | "circles" | "goals" | "settings";
 
@@ -74,7 +75,7 @@ function SignedOut() {
 }
 
 function Shell() {
-  const { status } = useStore();
+  const { status, retry } = useStore();
   const [tab, setTab] = useState<Tab>("home");
   const [detailId, setDetailId] = useState<string | null>(null);
   const [creating, setCreating] = useState(false);
@@ -95,6 +96,12 @@ function Shell() {
   }, [status]);
 
   if (status === "loading") return <Loader />;
+  if (status === "offline")
+    return (
+      <SafeAreaView style={styles.root} edges={["top", "bottom"]}>
+        <Offline onRetry={retry} />
+      </SafeAreaView>
+    );
   if (status === "signedOut")
     return (
       <SafeAreaView style={styles.root} edges={["top", "bottom"]}>

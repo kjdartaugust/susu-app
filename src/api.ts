@@ -38,6 +38,35 @@ export interface SusuState {
   userId: string;
 }
 
+/** Carries the HTTP status so callers can tell "your session expired" apart
+ *  from "the network is down" — the two need opposite responses. status 0
+ *  means the request never reached the server. */
+export class ApiError extends Error {
+  constructor(
+    message: string,
+    readonly status: number
+  ) {
+    super(message);
+    this.name = "ApiError";
+  }
+  /** The token is genuinely no good; signing out is correct. */
+  get isAuth() {
+    return this.status === 401;
+  }
+  /** Nothing is wrong with the session — the request just didn't get there. */
+  get isOffline() {
+    return this.status === 0;
+  }
+}
+
+// Called when the server rejects our token mid-session, so the app can drop
+// to the signed-out state instead of failing every action forever. Registered
+// centrally rather than at each call site, where it would be easy to forget.
+let onUnauthorized: (() => void) | null = null;
+export function setUnauthorizedHandler(fn: (() => void) | null) {
+  onUnauthorized = fn;
+}
+
 async function api<T>(
   method: string,
   path: string,
@@ -54,12 +83,15 @@ async function api<T>(
       body: body === undefined ? undefined : JSON.stringify(body),
     });
   } catch {
-    throw new Error("Can't reach the server. Check your connection.");
+    throw new ApiError("Can't reach the server. Check your connection.", 0);
   }
   const data = await res.json().catch(() => ({} as Record<string, unknown>));
   if (!res.ok) {
+    // A 401 from /api/auth/* just means wrong credentials on a form we're
+    // already showing — only a rejected *session* should sign anyone out.
+    if (res.status === 401 && !path.startsWith("/api/auth/")) onUnauthorized?.();
     const msg = (data as { error?: string }).error;
-    throw new Error(msg || `Request failed (${res.status})`);
+    throw new ApiError(msg || `Request failed (${res.status})`, res.status);
   }
   return data as T;
 }
@@ -102,6 +134,8 @@ export async function logout(): Promise<void> {
 // its data in rather than reconciling by hand.
 
 export async function fetchState(): Promise<SusuState> {
+  // A rejected session now comes back as 401 and throws above, so a null here
+  // would only mean a genuinely empty account.
   const { state } = await api<{ state: SusuState | null }>(
     "GET",
     "/api/susu/state"

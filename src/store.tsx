@@ -38,7 +38,9 @@ const firstName = (full?: string) => (full ?? "").trim().split(/\s+/)[0] ?? "";
 
 // loading = still checking for a saved session; signedOut = show the auth
 // screen; ready = we have the user's data.
-type Status = "loading" | "signedOut" | "ready";
+// offline = we have a session but couldn't reach the server; the user is not
+// signed out and shouldn't be treated as such.
+type Status = "loading" | "signedOut" | "offline" | "ready";
 
 interface StoreValue {
   data: AppData;
@@ -53,6 +55,8 @@ interface StoreValue {
   login: (i: { email: string; password: string }) => Promise<void>;
   logout: () => Promise<void>;
   refresh: () => Promise<void>;
+  /** Retry restoring the session after an offline start. */
+  retry: () => Promise<void>;
   // circles
   addCircle: (c: Omit<Circle, "id" | "paid">) => Promise<string | null>;
   deleteCircle: (id: string) => Promise<void>;
@@ -110,19 +114,20 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       }
       prefsLoaded.current = true;
 
-      const token = await api.loadToken();
-      if (!token) {
-        setStatus("signedOut");
-        return;
-      }
-      try {
-        setServer(await api.fetchState());
-        setStatus("ready");
-      } catch {
-        await api.logout();
-        setStatus("signedOut");
-      }
+      await loadSession();
     })();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // If the session is rejected while the app is open, drop to signed out once,
+  // centrally, rather than letting every subsequent action fail.
+  useEffect(() => {
+    api.setUnauthorizedHandler(() => {
+      api.logout().catch(() => {});
+      setServer({ circles: [], goals: [], userName: "", userId: "" });
+      setStatus("signedOut");
+    });
+    return () => api.setUnauthorizedHandler(null);
   }, []);
 
   useEffect(() => {
@@ -165,6 +170,30 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     },
     []
   );
+
+  /** Restore the saved session. A failure here used to sign the user out and
+   *  throw the token away — so opening the app on a bad connection logged you
+   *  out for no reason. Only a rejected token means "signed out"; anything
+   *  else keeps the session and offers a retry. */
+  const loadSession = useCallback(async () => {
+    const saved = await api.loadToken();
+    if (!saved) {
+      setStatus("signedOut");
+      return;
+    }
+    setStatus("loading");
+    try {
+      setServer(await api.fetchState());
+      setStatus("ready");
+    } catch (e) {
+      if (e instanceof api.ApiError && e.isAuth) {
+        await api.logout();
+        setStatus("signedOut");
+      } else {
+        setStatus("offline");
+      }
+    }
+  }, []);
 
   const logout = useCallback(async () => {
     await api.logout();
@@ -296,6 +325,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
         login,
         logout,
         refresh,
+        retry: loadSession,
         addCircle,
         deleteCircle,
         togglePaid,
