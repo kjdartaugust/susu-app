@@ -228,6 +228,25 @@ export interface InvitePreview {
   organiser: string;
 }
 
+export interface ParsedCircle {
+  name: string;
+  contribution: number;
+  frequency: Frequency;
+  members: string[];
+  /** Fields the description didn't specify, so the form can point at them. */
+  missing: string[];
+}
+
+/** Turn a typed description into form fields. Prefills only — never creates. */
+export async function parseCircle(description: string): Promise<ParsedCircle> {
+  const { circle } = await api<{ circle: ParsedCircle }>(
+    "POST",
+    "/api/susu/parse-circle",
+    { description }
+  );
+  return circle;
+}
+
 // Owner mints an invite for a member slot; returns the token to share.
 export async function createInvite(
   circleId: string,

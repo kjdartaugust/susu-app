@@ -4,6 +4,7 @@ import { useStore } from "../store";
 import { colors, radius } from "../theme";
 import { Button, Card, Display, Field } from "../ui";
 import { notify } from "../dialog";
+import { parseCircle as parseCircleApi } from "../api";
 import { CURRENCY_SYMBOL, FREQ_LABEL, toBaseGhs, uid } from "../logic";
 import { Frequency } from "../types";
 
@@ -29,6 +30,39 @@ export default function NewCircle({
 
   const [busy, setBusy] = useState(false);
   const valid = name.trim() && Number(amount) > 0 && members.length >= 2;
+
+  // Describe-it shortcut. This only fills the fields in — the user still
+  // reviews everything and taps Create, so a bad parse costs an edit, not a
+  // wrong circle.
+  const [describing, setDescribing] = useState(false);
+  const [description, setDescription] = useState("");
+  const [parsing, setParsing] = useState(false);
+
+  async function applyDescription() {
+    if (!description.trim() || parsing) return;
+    setParsing(true);
+    try {
+      const c = await parseCircleApi(description);
+      if (c.name) setName(c.name);
+      if (c.contribution > 0) setAmount(String(c.contribution));
+      setFreq(c.frequency);
+      if (c.members.length) setMembersText(c.members.join("\n") + "\n");
+      setDescribing(false);
+      setDescription("");
+      if (c.missing.length)
+        notify(
+          "Filled in what I could",
+          `Still needs: ${c.missing.join(", ")}.`
+        );
+    } catch (e) {
+      notify(
+        "Couldn't read that",
+        e instanceof Error ? e.message : "Try rewording it."
+      );
+    } finally {
+      setParsing(false);
+    }
+  }
 
   async function create() {
     if (!valid || busy) return;
@@ -83,6 +117,61 @@ export default function NewCircle({
             <Text style={{ color: colors.muted, fontSize: 16 }}>Cancel</Text>
           </Pressable>
         </View>
+
+        {describing ? (
+          <Card style={{ marginBottom: 14, borderColor: colors.primarySoft }}>
+            <Field
+              label="Describe your circle"
+              placeholder="weekly 200 cedis with Ama, Kofi, Yaa and Abena"
+              value={description}
+              onChangeText={setDescription}
+              multiline
+              numberOfLines={3}
+              style={{ minHeight: 76, textAlignVertical: "top" }}
+              autoFocus
+            />
+            <View style={{ flexDirection: "row", gap: 8 }}>
+              <View style={{ flex: 1 }}>
+                <Button
+                  title={parsing ? "Reading…" : "Fill in the form"}
+                  onPress={applyDescription}
+                  disabled={parsing || !description.trim()}
+                  small
+                />
+              </View>
+              <Button
+                title="Cancel"
+                variant="ghost"
+                small
+                onPress={() => setDescribing(false)}
+              />
+            </View>
+            <Text style={{ color: colors.faint, fontSize: 12, marginTop: 10 }}>
+              You&apos;ll get to check everything before it&apos;s created.
+            </Text>
+          </Card>
+        ) : (
+          <Pressable
+            onPress={() => setDescribing(true)}
+            style={{
+              flexDirection: "row",
+              alignItems: "center",
+              justifyContent: "center",
+              gap: 8,
+              paddingVertical: 12,
+              marginBottom: 14,
+              borderRadius: radius.sm,
+              borderWidth: 1,
+              borderStyle: "dashed",
+              borderColor: colors.border,
+            }}
+          >
+            <Text style={{ color: colors.primary, fontSize: 15 }}>✧</Text>
+            <Text style={{ color: colors.primary, fontWeight: "700", fontSize: 14 }}>
+              Describe it instead
+            </Text>
+          </Pressable>
+        )}
 
         <Card>
           <Field
