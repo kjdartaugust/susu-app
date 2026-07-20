@@ -1,6 +1,8 @@
 import React, { useState } from "react";
 import {
+  KeyboardAvoidingView,
   Modal,
+  Platform,
   Pressable,
   ScrollView,
   Text,
@@ -24,6 +26,10 @@ export default function Goals() {
   const [depOpen, setDepOpen] = useState<string | null>(null);
   const [depAmt, setDepAmt] = useState("");
   const [depNote, setDepNote] = useState("");
+  const [depMode, setDepMode] = useState<"add" | "withdraw">("add");
+
+  const goalValid = gName.trim().length > 0 && Number(gTarget) > 0;
+  const depValid = Number(depAmt) > 0;
 
   async function createGoal() {
     if (!gName.trim() || Number(gTarget) <= 0) return;
@@ -41,12 +47,15 @@ export default function Goals() {
   }
 
   async function deposit() {
-    if (!depOpen || !Number(depAmt)) return;
+    if (!depOpen || !depValid) return;
+    // The amount is always entered positive; the mode decides the sign, so
+    // nobody has to know to type a minus.
+    const signed = Math.abs(Number(depAmt)) * (depMode === "withdraw" ? -1 : 1);
     try {
       await addGoalTxn(
         depOpen,
-        toBaseGhs(Number(depAmt), disp, data.usdRate),
-        depNote.trim() || "Deposit"
+        toBaseGhs(signed, disp, data.usdRate),
+        depNote.trim() || (depMode === "withdraw" ? "Withdrawal" : "Deposit")
       );
       setDepAmt("");
       setDepNote("");
@@ -94,7 +103,7 @@ export default function Goals() {
 
       {data.goals.map((g) => {
         const saved = goalSaved(g);
-        const pct = Math.min(1, saved / g.target);
+        const pct = g.target > 0 ? Math.min(1, saved / g.target) : 0;
         const done = saved >= g.target;
         return (
           <Card key={g.id} style={{ marginBottom: 12 }}>
@@ -129,16 +138,42 @@ export default function Goals() {
                 <Text style={{ color: colors.muted, fontSize: 20 }}>⋯</Text>
               </Pressable>
             </View>
-            <Text style={{ color: colors.muted, marginTop: 4, marginBottom: 10 }}>
-              {fmt(saved)} of {fmt(g.target)} · {Math.round(pct * 100)}%
-            </Text>
+            <View
+              style={{
+                flexDirection: "row",
+                alignItems: "flex-end",
+                justifyContent: "space-between",
+                marginTop: 8,
+                marginBottom: 10,
+                gap: 12,
+              }}
+            >
+              <Display size={24} weight="bold">
+                {fmt(saved)}
+              </Display>
+              <Text style={{ color: colors.muted, fontSize: 13, marginBottom: 3 }}>
+                of {fmt(g.target)} · {Math.round(pct * 100)}%
+              </Text>
+            </View>
             <Progress value={pct} />
+            <Text style={{ color: colors.faint, fontSize: 12, marginTop: 6 }}>
+              {done
+                ? "Goal reached"
+                : `${fmt(Math.max(0, g.target - saved))} to go`}
+            </Text>
             <View style={{ marginTop: 14 }}>
               <Button
                 title="+ Add money"
                 variant="gold"
                 small
-                onPress={() => setDepOpen(g.id)}
+                onPress={() => {
+                  // Fresh sheet each time — otherwise it reopens still set to
+                  // "withdraw" from a previous visit.
+                  setDepMode("add");
+                  setDepAmt("");
+                  setDepNote("");
+                  setDepOpen(g.id);
+                }}
               />
             </View>
             {g.txns.length > 0 && (
@@ -188,27 +223,65 @@ export default function Goals() {
             value={gTarget}
             onChangeText={setGTarget}
           />
-          <Button title="Create goal" onPress={createGoal} />
+          <Button title="Create goal" onPress={createGoal} disabled={!goalValid} />
         </Sheet>
       </Modal>
 
       {/* Deposit modal */}
       <Modal visible={!!depOpen} transparent animationType="slide">
-        <Sheet onClose={() => setDepOpen(null)} title="Add money">
+        <Sheet
+          onClose={() => setDepOpen(null)}
+          title={depMode === "withdraw" ? "Take money out" : "Add money"}
+        >
+          <View style={{ flexDirection: "row", gap: 8, marginBottom: 16 }}>
+            {(["add", "withdraw"] as const).map((m) => {
+              const active = depMode === m;
+              return (
+                <Pressable
+                  key={m}
+                  onPress={() => setDepMode(m)}
+                  style={{
+                    flex: 1,
+                    paddingVertical: 11,
+                    borderRadius: radius.sm,
+                    alignItems: "center",
+                    backgroundColor: active ? colors.primarySolid : colors.cardAlt,
+                    borderWidth: 1,
+                    borderColor: active ? colors.primarySolid : colors.border,
+                  }}
+                >
+                  <Text
+                    style={{
+                      color: active ? "#fff" : colors.muted,
+                      fontWeight: "800",
+                      fontSize: 14,
+                    }}
+                  >
+                    {m === "add" ? "Add" : "Withdraw"}
+                  </Text>
+                </Pressable>
+              );
+            })}
+          </View>
           <Field
-            label={`Amount (${sym}) — use minus for withdrawal`}
+            label={`Amount (${sym})`}
             placeholder="100"
-            keyboardType="numbers-and-punctuation"
+            keyboardType="numeric"
             value={depAmt}
             onChangeText={setDepAmt}
           />
           <Field
             label="Note (optional)"
-            placeholder="Susu payout"
+            placeholder={depMode === "withdraw" ? "Emergency" : "Susu payout"}
             value={depNote}
             onChangeText={setDepNote}
           />
-          <Button title="Save" variant="gold" onPress={deposit} />
+          <Button
+            title={depMode === "withdraw" ? "Withdraw" : "Add money"}
+            variant="gold"
+            onPress={deposit}
+            disabled={!depValid}
+          />
         </Sheet>
       </Modal>
     </ScrollView>
@@ -225,7 +298,13 @@ function Sheet({
   onClose: () => void;
 }) {
   return (
-    <View style={{ flex: 1, justifyContent: "flex-end" }}>
+    // Keyboard-aware: these sheets sit at the bottom of the screen and are all
+    // text inputs, so on iOS the keyboard would otherwise cover the very field
+    // being typed into.
+    <KeyboardAvoidingView
+      style={{ flex: 1, justifyContent: "flex-end" }}
+      behavior={Platform.OS === "ios" ? "padding" : undefined}
+    >
       <Pressable
         style={{ flex: 1, backgroundColor: "rgba(0,0,0,0.5)" }}
         onPress={onClose}
@@ -239,6 +318,9 @@ function Sheet({
           paddingBottom: 40,
           borderTopWidth: 1,
           borderColor: colors.border,
+          width: "100%",
+          maxWidth: 460,
+          alignSelf: "center",
         }}
       >
         <View
@@ -258,6 +340,6 @@ function Sheet({
         </View>
         {children}
       </View>
-    </View>
+    </KeyboardAvoidingView>
   );
 }

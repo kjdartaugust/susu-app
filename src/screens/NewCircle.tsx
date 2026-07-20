@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { Pressable, ScrollView, Text, View } from "react-native";
+import { KeyboardAvoidingView, Platform, Pressable, ScrollView, Text, View } from "react-native";
 import { useStore } from "../store";
 import { colors, radius } from "../theme";
 import { Button, Card, Display, Field } from "../ui";
@@ -57,101 +57,108 @@ export default function NewCircle({
   }
 
   return (
-    <ScrollView
-      contentContainerStyle={{ padding: 16, paddingBottom: 120 }}
-      keyboardShouldPersistTaps="handled"
+    // Wraps the scroller so the on-screen keyboard pushes content up instead
+    // of covering the field being typed into.
+    <KeyboardAvoidingView
+      style={{ flex: 1 }}
+      behavior={Platform.OS === "ios" ? "padding" : undefined}
     >
-      <View
-        style={{
-          flexDirection: "row",
-          justifyContent: "space-between",
-          alignItems: "center",
-          marginBottom: 18,
-          marginTop: 4,
-        }}
+      <ScrollView
+        contentContainerStyle={{ padding: 16, paddingBottom: 120 }}
+        keyboardShouldPersistTaps="handled"
       >
-        <Display size={26} weight="black">
-          New Circle
-        </Display>
-        <Pressable onPress={onCancel}>
-          <Text style={{ color: colors.muted, fontSize: 16 }}>Cancel</Text>
-        </Pressable>
-      </View>
-
-      <Card>
-        <Field
-          label="Circle name"
-          placeholder="e.g. Market Ladies Susu"
-          value={name}
-          onChangeText={setName}
-        />
-        <Field
-          label={`Contribution per round (${CURRENCY_SYMBOL[data.displayCurrency]})`}
-          placeholder="100"
-          keyboardType="numeric"
-          value={amount}
-          onChangeText={setAmount}
-        />
-
-        <Text
+        <View
           style={{
-            color: colors.muted,
-            fontSize: 13,
-            fontWeight: "600",
-            marginBottom: 6,
+            flexDirection: "row",
+            justifyContent: "space-between",
+            alignItems: "center",
+            marginBottom: 18,
+            marginTop: 4,
           }}
         >
-          How often
-        </Text>
-        <View style={{ flexDirection: "row", gap: 8, marginBottom: 14 }}>
-          {FREQS.map((f) => (
-            <Pressable
-              key={f}
-              onPress={() => setFreq(f)}
-              style={{
-                flex: 1,
-                paddingVertical: 10,
-                borderRadius: radius.sm,
-                alignItems: "center",
-                backgroundColor: freq === f ? colors.primary : colors.cardAlt,
-                borderWidth: 1,
-                borderColor: freq === f ? colors.primary : colors.border,
-              }}
-            >
-              <Text
-                style={{
-                  color: freq === f ? "#08130B" : colors.text,
-                  fontWeight: "700",
-                  fontSize: 13,
-                }}
-              >
-                {FREQ_LABEL[f]}
-              </Text>
-            </Pressable>
-          ))}
+          <Display size={26} weight="black">
+            New Circle
+          </Display>
+          <Pressable onPress={onCancel}>
+            <Text style={{ color: colors.muted, fontSize: 16 }}>Cancel</Text>
+          </Pressable>
         </View>
 
-        <Field
-          label="Members (one per line, in payout order)"
-          placeholder={"You\nAma\nKwame"}
-          value={membersText}
-          onChangeText={setMembersText}
-          multiline
-          numberOfLines={5}
-          style={{ minHeight: 120, textAlignVertical: "top" }}
-        />
-        <Text style={{ color: colors.muted, fontSize: 12 }}>
-          {members.length} members · order = who collects first, second, …
-        </Text>
-      </Card>
+        <Card>
+          <Field
+            label="Circle name"
+            placeholder="e.g. Market Ladies Susu"
+            value={name}
+            onChangeText={setName}
+          />
+          <Field
+            label={`Contribution per round (${CURRENCY_SYMBOL[data.displayCurrency]})`}
+            placeholder="100"
+            keyboardType="numeric"
+            value={amount}
+            onChangeText={setAmount}
+          />
 
-      <View style={{ marginTop: 18 }}>
-        <Button
-          title={busy ? "Creating…" : "Create circle"}
-          onPress={create}
-          disabled={!valid || busy}
-        />
-      </View>
-    </ScrollView>
+          <Text
+            style={{
+              color: colors.muted,
+              fontSize: 13,
+              fontWeight: "600",
+              marginBottom: 6,
+            }}
+          >
+            How often
+          </Text>
+          <View style={{ flexDirection: "row", gap: 8, marginBottom: 14 }}>
+            {FREQS.map((f) => (
+              <Pressable
+                key={f}
+                onPress={() => setFreq(f)}
+                style={{
+                  flex: 1,
+                  paddingVertical: 10,
+                  borderRadius: radius.sm,
+                  alignItems: "center",
+                  backgroundColor: freq === f ? colors.primary : colors.cardAlt,
+                  borderWidth: 1,
+                  borderColor: freq === f ? colors.primary : colors.border,
+                }}
+              >
+                <Text
+                  style={{
+                    color: freq === f ? "#08130B" : colors.text,
+                    fontWeight: "700",
+                    fontSize: 13,
+                  }}
+                >
+                  {FREQ_LABEL[f]}
+                </Text>
+              </Pressable>
+            ))}
+          </View>
+
+          <Field
+            label="Members (one per line, in payout order)"
+            placeholder={"You\nAma\nKwame"}
+            value={membersText}
+            onChangeText={setMembersText}
+            multiline
+            numberOfLines={5}
+            style={{ minHeight: 120, textAlignVertical: "top" }}
+          />
+          <Text style={{ color: colors.muted, fontSize: 12 }}>
+            {members.length} members · order = who collects first, second, …
+          </Text>
+        </Card>
+
+        <View style={{ marginTop: 18 }}>
+          <Button
+            title={busy ? "Creating…" : "Create circle"}
+            onPress={create}
+            disabled={!valid || busy}
+          />
+        </View>
+      </ScrollView>
+    </KeyboardAvoidingView>
   );
 }

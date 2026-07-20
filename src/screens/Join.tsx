@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { Pressable, ScrollView, Text, View } from "react-native";
+import { KeyboardAvoidingView, Platform, Pressable, ScrollView, Text, View } from "react-native";
 import { useStore } from "../store";
 import { colors, radius } from "../theme";
 import { Button, Card, Display, Field } from "../ui";
@@ -63,129 +63,136 @@ export default function Join({
   const open = preview && !preview.claimed;
 
   return (
-    <ScrollView
-      contentContainerStyle={{
-        padding: 20,
-        paddingBottom: 120,
-        width: "100%",
-        maxWidth: 460,
-        alignSelf: "center",
-      }}
-      keyboardShouldPersistTaps="handled"
+    // Wraps the scroller so the on-screen keyboard pushes content up instead
+    // of covering the field being typed into.
+    <KeyboardAvoidingView
+      style={{ flex: 1 }}
+      behavior={Platform.OS === "ios" ? "padding" : undefined}
     >
-      <View
-        style={{
-          flexDirection: "row",
-          justifyContent: "space-between",
-          alignItems: "center",
-          marginBottom: 18,
-          marginTop: 4,
+      <ScrollView
+        contentContainerStyle={{
+          padding: 20,
+          paddingBottom: 120,
+          width: "100%",
+          maxWidth: 460,
+          alignSelf: "center",
         }}
+        keyboardShouldPersistTaps="handled"
       >
-        <Display size={26} weight="black">
-          {open ? "You're invited" : "Join a circle"}
-        </Display>
-        <Pressable onPress={onCancel} hitSlop={10}>
-          <Text style={{ color: colors.muted, fontSize: 16 }}>Cancel</Text>
-        </Pressable>
-      </View>
-
-      {open && preview ? (
-        <>
-          <Text style={{ color: colors.muted, lineHeight: 22, marginBottom: 4 }}>
-            <Text style={{ color: colors.text, fontWeight: "700" }}>
-              {preview.organiser}
-            </Text>{" "}
-            invited you to join
-          </Text>
-          <Display size={28} weight="black">
-            {preview.circleName}
+        <View
+          style={{
+            flexDirection: "row",
+            justifyContent: "space-between",
+            alignItems: "center",
+            marginBottom: 18,
+            marginTop: 4,
+          }}
+        >
+          <Display size={26} weight="black">
+            {open ? "You're invited" : "Join a circle"}
           </Display>
+          <Pressable onPress={onCancel} hitSlop={10}>
+            <Text style={{ color: colors.muted, fontSize: 16 }}>Cancel</Text>
+          </Pressable>
+        </View>
 
-          {/* Their circle, with the seat you'd be taking lit up. */}
-          <View style={{ alignItems: "center", marginTop: 22, marginBottom: 6 }}>
-            <CircleRing
-              size={216}
-              members={preview.members}
-              amount={fmt(preview.contribution * preview.members.length)}
-              step={preview.position}
-              showCaption={false}
-            />
-          </View>
-
-          <Card style={{ marginTop: 16 }}>
-            <Row label="Your seat" value={`${preview.memberName} · position ${preview.position + 1}`} />
-            <Row label="You put in" value={`${fmt(preview.contribution)} ${FREQ_LABEL[preview.frequency].toLowerCase()}`} />
-            <Row
-              label="You collect"
-              value={`${fmt(preview.contribution * preview.members.length)} on your turn`}
-              last
-            />
-          </Card>
-
-          {error && (
-            <Text style={{ color: colors.danger, marginTop: 14, fontSize: 14 }}>
-              {error}
-            </Text>
-          )}
-
-          <View style={{ marginTop: 18 }}>
-            <Button
-              title={busy ? "Joining…" : "Join circle"}
-              onPress={join}
-              disabled={busy}
-            />
-          </View>
-          <Text
-            style={{
-              color: colors.faint,
-              fontSize: 12,
-              textAlign: "center",
-              marginTop: 12,
-              lineHeight: 18,
-            }}
-          >
-            Susu only keeps track of the circle. It doesn&apos;t move any money.
-          </Text>
-        </>
-      ) : (
-        <>
-          <Card>
-            <Field
-              label="Invite code"
-              placeholder="Paste the code you were sent"
-              value={code}
-              onChangeText={setCode}
-              autoCapitalize="none"
-            />
-            <Button
-              title={busy ? "Checking…" : "Look up"}
-              variant="ghost"
-              onPress={() => look(code)}
-              disabled={busy || !code.trim()}
-            />
-          </Card>
-
-          {preview?.claimed && (
-            <Card style={{ marginTop: 16, borderColor: colors.dangerSoft }}>
+        {open && preview ? (
+          <>
+            <Text style={{ color: colors.muted, lineHeight: 22, marginBottom: 4 }}>
               <Text style={{ color: colors.text, fontWeight: "700" }}>
-                This invite has already been used
-              </Text>
-              <Text style={{ color: colors.muted, marginTop: 6, lineHeight: 20 }}>
-                Someone has already taken that seat. Ask{" "}
-                {preview.organiser} for a new link.
-              </Text>
-            </Card>
-          )}
-
-          {error && (
-            <Text style={{ color: colors.danger, marginTop: 14, fontSize: 14 }}>
-              {error}
+                {preview.organiser}
+              </Text>{" "}
+              invited you to join
             </Text>
-          )}
-        </>
-      )}
-    </ScrollView>
+            <Display size={28} weight="black">
+              {preview.circleName}
+            </Display>
+
+            {/* Their circle, with the seat you'd be taking lit up. */}
+            <View style={{ alignItems: "center", marginTop: 22, marginBottom: 6 }}>
+              <CircleRing
+                size={216}
+                members={preview.members}
+                amount={fmt(preview.contribution * preview.members.length)}
+                step={preview.position}
+                showCaption={false}
+              />
+            </View>
+
+            <Card style={{ marginTop: 16 }}>
+              <Row label="Your seat" value={`${preview.memberName} · position ${preview.position + 1}`} />
+              <Row label="You put in" value={`${fmt(preview.contribution)} ${FREQ_LABEL[preview.frequency].toLowerCase()}`} />
+              <Row
+                label="You collect"
+                value={`${fmt(preview.contribution * preview.members.length)} on your turn`}
+                last
+              />
+            </Card>
+
+            {error && (
+              <Text style={{ color: colors.danger, marginTop: 14, fontSize: 14 }}>
+                {error}
+              </Text>
+            )}
+
+            <View style={{ marginTop: 18 }}>
+              <Button
+                title={busy ? "Joining…" : "Join circle"}
+                onPress={join}
+                disabled={busy}
+              />
+            </View>
+            <Text
+              style={{
+                color: colors.faint,
+                fontSize: 12,
+                textAlign: "center",
+                marginTop: 12,
+                lineHeight: 18,
+              }}
+            >
+              Susu only keeps track of the circle. It doesn&apos;t move any money.
+            </Text>
+          </>
+        ) : (
+          <>
+            <Card>
+              <Field
+                label="Invite code"
+                placeholder="Paste the code you were sent"
+                value={code}
+                onChangeText={setCode}
+                autoCapitalize="none"
+              />
+              <Button
+                title={busy ? "Checking…" : "Look up"}
+                variant="ghost"
+                onPress={() => look(code)}
+                disabled={busy || !code.trim()}
+              />
+            </Card>
+
+            {preview?.claimed && (
+              <Card style={{ marginTop: 16, borderColor: colors.dangerSoft }}>
+                <Text style={{ color: colors.text, fontWeight: "700" }}>
+                  This invite has already been used
+                </Text>
+                <Text style={{ color: colors.muted, marginTop: 6, lineHeight: 20 }}>
+                  Someone has already taken that seat. Ask{" "}
+                  {preview.organiser} for a new link.
+                </Text>
+              </Card>
+            )}
+
+            {error && (
+              <Text style={{ color: colors.danger, marginTop: 14, fontSize: 14 }}>
+                {error}
+              </Text>
+            )}
+          </>
+        )}
+      </ScrollView>
+    </KeyboardAvoidingView>
   );
 }
 

@@ -152,7 +152,9 @@ export function Field({
 }
 
 export function Progress({ value }: { value: number }) {
-  const pct = Math.max(0, Math.min(1, value));
+  // A zero target or an empty goal yields NaN/Infinity here, and NaN survives
+  // clamping to become width: "NaN%". Treat anything non-finite as empty.
+  const pct = Number.isFinite(value) ? Math.max(0, Math.min(1, value)) : 0;
   return (
     <View style={styles.track}>
       <LinearGradient
