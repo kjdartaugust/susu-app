@@ -52,6 +52,11 @@ function SignedOut() {
       <Auth
         initialMode={mode}
         onBack={INITIAL_INVITE ? undefined : () => setView("welcome")}
+        note={
+          INITIAL_INVITE
+            ? "You've been invited to a circle — create an account to take your seat."
+            : undefined
+        }
       />
     );
   return (

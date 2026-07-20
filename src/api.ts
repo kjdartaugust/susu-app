@@ -186,6 +186,12 @@ export interface InvitePreview {
   memberName: string;
   contribution: number;
   claimed: boolean;
+  frequency: Frequency;
+  /** Everyone in the circle, in payout order. */
+  members: string[];
+  /** The invitee's seat in that order. */
+  position: number;
+  organiser: string;
 }
 
 // Owner mints an invite for a member slot; returns the token to share.

@@ -12,14 +12,28 @@ export const FREQ_LABEL: Record<Frequency, string> = {
   monthly: "Monthly",
 };
 
-/** How many full cycles have elapsed since the circle started (0-based index
- *  of the *current* cycle). */
-export function currentCycleIndex(circle: Circle): number {
+/** Cycles elapsed since the start date, unclamped — can exceed the number of
+ *  rounds the circle actually has. */
+function elapsedCycles(circle: Circle): number {
   const start = new Date(circle.startDate).getTime();
-  const now = Date.now();
-  const days = Math.max(0, (now - start) / (1000 * 60 * 60 * 24));
-  const per = FREQ_DAYS[circle.frequency];
-  return Math.floor(days / per);
+  if (!Number.isFinite(start)) return 0;
+  const days = Math.max(0, (Date.now() - start) / (1000 * 60 * 60 * 24));
+  return Math.floor(days / FREQ_DAYS[circle.frequency]);
+}
+
+/** True once every member has had their turn. */
+export function circleComplete(circle: Circle): boolean {
+  return elapsedCycles(circle) >= totalCycles(circle);
+}
+
+/** 0-based index of the current cycle, clamped to the last round.
+ *
+ *  A circle only has as many rounds as it has members. Left unclamped this
+ *  runs past the end and the UI reports things like "Round 8 of 5", with no
+ *  selector entry for the round it claims is live. */
+export function currentCycleIndex(circle: Circle): number {
+  const last = Math.max(0, totalCycles(circle) - 1);
+  return Math.min(elapsedCycles(circle), last);
 }
 
 /** Whose turn it is to receive the pot this cycle. */

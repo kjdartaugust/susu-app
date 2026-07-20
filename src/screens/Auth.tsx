@@ -9,9 +9,13 @@ import { Button, Card, Display, Field } from "../ui";
 export default function Auth({
   initialMode = "signup",
   onBack,
+  /** Why the user is here, when they arrived for a specific reason (an invite
+   *  link) rather than opening the app cold. */
+  note,
 }: {
   initialMode?: "login" | "signup";
   onBack?: () => void;
+  note?: string;
 }) {
   const { login, signup } = useStore();
   const [mode, setMode] = useState<"login" | "signup">(initialMode);
@@ -53,7 +57,14 @@ export default function Auth({
       behavior={Platform.OS === "ios" ? "padding" : undefined}
     >
       <ScrollView
-        contentContainerStyle={{ padding: 20, paddingTop: 60, paddingBottom: 60 }}
+        contentContainerStyle={{
+          padding: 20,
+          paddingTop: 60,
+          paddingBottom: 60,
+          width: "100%",
+          maxWidth: 460,
+          alignSelf: "center",
+        }}
         keyboardShouldPersistTaps="handled"
       >
         {onBack && (
@@ -67,9 +78,10 @@ export default function Auth({
           {isSignup ? "Create your account" : "Welcome back"}
         </Display>
         <Text style={{ color: colors.muted, marginTop: 8, marginBottom: 28, fontSize: 15, lineHeight: 21 }}>
-          {isSignup
-            ? "Save your circles and reach them from any phone."
-            : "Sign in to your circles and goals."}
+          {note ??
+            (isSignup
+              ? "Save your circles and reach them from any phone."
+              : "Sign in to your circles and goals.")}
         </Text>
 
         <Card>

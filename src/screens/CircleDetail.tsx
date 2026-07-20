@@ -7,6 +7,7 @@ import { confirm, notify } from "../dialog";
 import CircleRing from "../components/CircleRing";
 import {
   FREQ_LABEL,
+  circleComplete,
   currentCycleIndex,
   formatMoney,
   membersPaidThisCycle,
@@ -48,6 +49,7 @@ export default function CircleDetail({
   const paidN = membersPaidThisCycle(circle, viewIdx);
   const due = nextCycleDate(circle, viewIdx);
   const isLive = viewIdx === liveIdx;
+  const done = circleComplete(circle) && viewIdx === liveIdx;
 
   function confirmDelete() {
     confirm({
@@ -178,8 +180,16 @@ export default function CircleDetail({
             Round {viewIdx + 1} of {cycles}
           </Text>
           <Badge
-            text={isLive ? relativeDue(due) : viewIdx < liveIdx ? "Past" : "Upcoming"}
-            tone={isLive ? "gold" : "muted"}
+            text={
+              done
+                ? "Circle complete"
+                : isLive
+                  ? relativeDue(due)
+                  : viewIdx < liveIdx
+                    ? "Past"
+                    : "Upcoming"
+            }
+            tone={done ? "green" : isLive ? "gold" : "muted"}
           />
         </View>
         {recipient && (
