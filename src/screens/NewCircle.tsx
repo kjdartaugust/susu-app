@@ -46,7 +46,18 @@ export default function NewCircle({
       if (c.name) setName(c.name);
       if (c.contribution > 0) setAmount(String(c.contribution));
       setFreq(c.frequency);
-      if (c.members.length) setMembersText(c.members.join("\n") + "\n");
+      if (c.members.length) {
+        // Keep the organiser first, exactly like the blank form does — a
+        // description usually names the *others* ("with Ama, Kofi…"), and the
+        // owner's slot is position 0 when the circle is created, so they must
+        // be in the list or they end up absent from their own circle.
+        const me = data.name.trim();
+        const others = c.members.filter(
+          (m) => m.trim().toLowerCase() !== me.toLowerCase()
+        );
+        const ordered = me ? [me, ...others] : c.members;
+        setMembersText(ordered.join("\n") + "\n");
+      }
       setDescribing(false);
       setDescription("");
       if (c.missing.length)
